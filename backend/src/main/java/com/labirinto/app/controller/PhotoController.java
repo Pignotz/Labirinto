@@ -7,23 +7,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.labirinto.app.entities.Poetry;
-import com.labirinto.app.repository.PoetryRepository;
+import com.labirinto.app.entities.Photo;
+import com.labirinto.app.repository.PhotoRepository;
 
 @RestController
-@RequestMapping("/api/poetry")
+@RequestMapping("/api/photo")
 @CrossOrigin(origins = "http://localhost:5173")
-public class PoetryController {
+public class PhotoController {
 
-    private final PoetryRepository poetryRepository;
+    private final PhotoRepository photoRepository;
 
-    public PoetryController(PoetryRepository poetryRepository) {
-        this.poetryRepository = poetryRepository;
+    public PhotoController(PhotoRepository photoRepository) {
+        this.photoRepository = photoRepository;
     }
 
     @GetMapping("/list")
-    public List<Poetry> list() {
-        return poetryRepository.findAll();
+    public List<Photo> list() {
+        return photoRepository.findAll();
     }
 }
 
