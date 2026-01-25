@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.labirinto.app.entities.Poetry;
+import com.labirinto.app.entities.Poem;
 import com.labirinto.app.repository.PoetryRepository;
 
 @RestController
@@ -22,7 +22,7 @@ public class PoetryController {
     }
 
     @GetMapping("/list")
-    public List<Poetry> list() {
+    public List<Poem> list() {
         return poetryRepository.findAll();
     }
 }

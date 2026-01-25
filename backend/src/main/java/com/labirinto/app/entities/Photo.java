@@ -18,14 +18,6 @@ public class Photo {
     @Lob
     private byte[] image;
 
-    // --- Costruttori ---
-    public Photo() {}
-
-    public Photo(boolean isAlreadyFound, byte[] image) {
-        this.isAlreadyFound = isAlreadyFound;
-        this.image = image;
-    }
-
     // --- Getters & Setters ---
     public Long getId() {
         return id;

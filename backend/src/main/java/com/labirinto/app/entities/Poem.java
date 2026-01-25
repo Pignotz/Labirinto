@@ -6,13 +6,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 @Entity
-public class Poetry {
+public class Poem {
 
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String content;
+	private String title;
+
+    private String text;
 
 	public Long getId() {
 		return id;
@@ -22,15 +24,21 @@ public class Poetry {
 		this.id = id;
 	}
 
-	public String getContent() {
-		return content;
+	public String getText() {
+		return text;
 	}
 
-	public void setContent(String content) {
-		this.content = content;
+	public void setText(String content) {
+		this.text = content;
 	}
 
+	public String getTitle() {
+		return title;
+	}
 
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
     
 }

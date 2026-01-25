@@ -56,4 +56,6 @@ application-dev.properties
 ############################
 backend/src/main/resources/static/
 backend/input-data/
-backend/.project
+.settings/
+.project
+.classpath
