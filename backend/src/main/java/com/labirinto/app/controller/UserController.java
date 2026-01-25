@@ -7,28 +7,31 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.labirinto.app.entities.Poem;
-import com.labirinto.app.repository.PoemRepository;
+import com.labirinto.app.entities.User;
+import com.labirinto.app.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/user")
 @CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
 
-    private final PoemRepository poetryRepository;
+    private final UserRepository userRepository;
 
-    public UserController(PoemRepository poetryRepository) {
-        this.poetryRepository = poetryRepository;
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/list")
-    public List<Poem> list() {
-        return poetryRepository.findAll();
+    public List<User> list() {
+        return userRepository.findAll();
     }
 
     @GetMapping("/create")
-    public void create() {
-        // Implementation for creating a user
+    public void create(String username) {
+        System.out.println("Creating user: " + username);
+        userRepository.save(new User() {{
+            setUsername(username);
+        }});
     }
 }
 

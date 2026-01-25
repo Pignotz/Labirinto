@@ -3,10 +3,13 @@ package com.labirinto.app.controller;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.labirinto.app.dto.UserPhotoRequest;
+import com.labirinto.app.entities.User;
 import com.labirinto.app.entities.UserPhoto;
 import com.labirinto.app.repository.UserPhotoRepository;
 
@@ -20,9 +23,14 @@ public class UserPhotoController {
         this.userPhotoRepository = userPhotoRepository;
     }
 
-    @GetMapping("/list")
-    public List<UserPhoto> list() {
-        return userPhotoRepository.findAll();
+    @PostMapping("/add")
+    public void add(@RequestBody UserPhotoRequest userPhotoRequest){
+        UserPhoto userPhoto = new UserPhoto();
+        UserPhoto.UserPhotoId userPhotoId = userPhoto.new UserPhotoId();
+        userPhotoId.setUserId(userPhotoRequest.getUserId());
+        userPhotoId.setPhotoId(userPhotoRequest.getPhotoId());
+        userPhoto.setId(userPhotoId);
+        userPhotoRepository.save(userPhoto);
     }
 }
 
