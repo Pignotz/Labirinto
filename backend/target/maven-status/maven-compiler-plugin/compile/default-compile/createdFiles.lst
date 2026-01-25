@@ -1,0 +1,7 @@
+com\labirinto\app\repository\PoetryRepository.class
+com\labirinto\app\controller\PoetryController.class
+com\labirinto\app\config\H2ServerConfig.class
+com\labirinto\app\entities\Foto.class
+com\labirinto\app\entities\Poetry.class
+com\labirinto\app\App.class
+com\labirinto\app\repository\FotoRepository.class
