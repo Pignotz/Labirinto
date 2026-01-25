@@ -4,4 +4,4 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.labirinto.app.entities.Poem;
 
-public interface PoetryRepository extends JpaRepository<Poem, Long> {}
+public interface PoemRepository extends JpaRepository<Poem, Long> {}

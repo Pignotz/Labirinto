@@ -15,18 +15,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.labirinto.app.entities.Photo;
 import com.labirinto.app.entities.Poem;
 import com.labirinto.app.repository.PhotoRepository;
-import com.labirinto.app.repository.PoetryRepository;
+import com.labirinto.app.repository.PoemRepository;
 
 @Component
 public class DbInit implements CommandLineRunner {
 
-    private final PoetryRepository poetryRepository;
+    private final PoemRepository poetryRepository;
     private final PhotoRepository photoRepository;
 
     @Value("${app.input-data-path:input-data}")
     private String inputDataDir;
 
-    public DbInit(PoetryRepository poetryRepository, PhotoRepository photoRepository) {
+    public DbInit(PoemRepository poetryRepository, PhotoRepository photoRepository) {
         this.poetryRepository = poetryRepository;
         this.photoRepository = photoRepository;
     }
@@ -63,7 +63,7 @@ public class DbInit implements CommandLineRunner {
     @SuppressWarnings("null")
     private void loadPoems() throws IOException {
         if (poetryRepository.count() == 0) {
-            Path jsonPath = Paths.get("input-data", "poetries.json");
+            Path jsonPath = Paths.get("input-data", "poems.json");
             System.out.println("Popolando DB con dati iniziali...");
             ObjectMapper mapper = new ObjectMapper();
             List<Poem> poems = mapper.readValue(

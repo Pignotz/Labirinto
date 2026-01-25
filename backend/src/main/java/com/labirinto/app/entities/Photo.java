@@ -13,8 +13,6 @@ public class Photo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private boolean isAlreadyFound;
-
     @Lob
     private byte[] image;
 
@@ -25,14 +23,6 @@ public class Photo {
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public boolean isAlreadyFound() {
-        return isAlreadyFound;
-    }
-
-    public void setAlreadyFound(boolean alreadyFound) {
-        isAlreadyFound = alreadyFound;
     }
 
     public byte[] getImage() {

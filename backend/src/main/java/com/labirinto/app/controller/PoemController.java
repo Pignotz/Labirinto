@@ -8,16 +8,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.labirinto.app.entities.Poem;
-import com.labirinto.app.repository.PoetryRepository;
+import com.labirinto.app.repository.PoemRepository;
 
 @RestController
-@RequestMapping("/api/poetry")
+@RequestMapping("/api/poem")
 @CrossOrigin(origins = "http://localhost:5173")
-public class PoetryController {
+public class PoemController {
 
-    private final PoetryRepository poetryRepository;
+    private final PoemRepository poetryRepository;
 
-    public PoetryController(PoetryRepository poetryRepository) {
+    public PoemController(PoemRepository poetryRepository) {
         this.poetryRepository = poetryRepository;
     }
 
