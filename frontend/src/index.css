@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset margins and prevent horizontal scroll */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    /* prevent unnecessary horizontal scrollbar */
+    height: 100%;
+    /* allow min-height to work correctly */
+}
+
+/* Full-screen background container */
+.background {
+    position: relative;
+    min-height: 100vh;
+    /* full viewport height */
+    width: 100%;
+    /* full width */
+    overflow: hidden;
+    /* hide overflowing background if any */
+}
+
+/* Background image */
+.background::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('./assets/images/MainBackground.jpg');
+    /* your image */
+    background-size: cover;
+    /* scale to cover the container */
+    background-position: center;
+    /* center the image */
+    background-repeat: no-repeat;
+    z-index: -1;
+    /* behind content */
+}
+
+
+/* Page content */
+.content {
+    position: relative;
+    /* above the background */
+    z-index: 1;
+    padding: 2rem;
+    color: white;
+    /* or whatever color works */
+}
+
+
+.glass {
+    @apply bg-white/50 backdrop-blur-sm rounded-md m-3 p-4 shadow-md items-center w-auto;
+
+}

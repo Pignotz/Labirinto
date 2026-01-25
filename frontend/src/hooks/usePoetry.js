@@ -1,0 +1,2 @@
+import {useEffect,useState} from "react"; import {fetchPoetryList}from"../api/poetryApi";
+export function usePoetry(){ const [poetry,setPoetry]=useState([]); const [loading,setLoading]=useState(true); useEffect(()=>{fetchPoetryList().then(setPoetry).finally(()=>setLoading(false));},[]); return {poetry,loading}; }

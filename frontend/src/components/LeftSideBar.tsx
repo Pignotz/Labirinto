@@ -1,0 +1,38 @@
+import React from "react";
+import { Card, Listbox, ListboxItem } from "@heroui/react";
+
+type Props = {
+  activeKey: string;
+  setActiveKey: (key: string) => void;
+};
+
+export default function LeftSideBar({ activeKey, setActiveKey }: Props): JSX.Element {
+  const sidebarItems = [
+    { key: "play", label: "🎮 Gioca" },
+    { key: "collectibles", label: "✨ Collezionabili" },
+    { key: "achievements", label: "🏆 Achievements" },
+  ];
+
+  return (
+    <Card className="flex flex-col p-3 gap-4 glass">
+      <Listbox
+        disallowEmptySelection
+        selectionMode="single"
+        selectedKeys={[activeKey]}
+        className="w-40 ml-2"
+      >
+        {sidebarItems.map((item) => (
+          <ListboxItem
+            key={item.key}
+            variant={activeKey === item.key ? "solid" : "light"}
+            color={activeKey === item.key ? "primary" : "default"}
+            className="w-full"
+            onPress={() => setActiveKey(item.key)}
+          >
+            {item.label}
+          </ListboxItem>
+        ))}
+      </Listbox>
+    </Card>
+  );
+}

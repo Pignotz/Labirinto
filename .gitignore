@@ -1,0 +1,57 @@
+############################
+# OS / Editor
+############################
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.iml
+
+############################
+# Node / Frontend
+############################
+node_modules/
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+############################
+# Java / Maven
+############################
+target/
+backend/target/
+*.class
+*.jar
+*.war
+*.ear
+
+############################
+# Spring Boot
+############################
+spring.log
+logs/
+*.log
+
+############################
+# H2 Database (runtime data)
+############################
+data/
+*.mv.db
+*.trace.db
+
+############################
+# Environment / Secrets
+############################
+.env
+.env.*
+application-local.properties
+application-dev.properties
+
+############################
+# Temporary build artifacts
+############################
+backend/src/main/resources/static/
