@@ -23,7 +23,6 @@ export default function PendingNav({ pendingNav, onCancel, onConfirm }: Props) {
                     <button className="px-3 py-1 rounded bg-gray-200" onClick={onCancel}>
                         Annulla
                     </button>
-
                     <button className="px-3 py-1 rounded bg-blue-600 text-white" onClick={onConfirm}>
                         Procedi
                     </button>

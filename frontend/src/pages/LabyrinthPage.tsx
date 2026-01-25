@@ -26,6 +26,15 @@ const COLORS = {
 type cellType = "normal" | "special" | "exit";
 type direction = "top" | "right" | "bottom" | "left";
 
+class Positioned {
+    row: number;
+    col: number;
+    constructor(row: number, col: number) {
+        this.row = row;
+        this.col = col;
+    }
+}
+
 // ==============================
 // CELL
 // ==============================
@@ -35,9 +44,7 @@ type direction = "top" | "right" | "bottom" | "left";
  * special cell (e.g. triggers an event), and which of its four
  * walls are present. Walls are booleans named `top|right|bottom|left`.
  */
-class Cell {
-    row: number;
-    col: number;
+class Cell extends Positioned {
     type: cellType;
     walls: {
         top: boolean;
@@ -46,8 +53,7 @@ class Cell {
         left: boolean;
     };
     constructor(row: number, col: number) {
-        this.row = row;
-        this.col = col;
+        super(row, col);
         this.type = "normal";
         this.walls = {
             top: true,
@@ -64,8 +70,7 @@ class Cell {
      */
     hasWall(direction: direction): boolean {
         return this.walls[direction];
-    }
-
+        }
     /**
      * Remove the wall on this cell at `direction` (used by the
      * maze-carving algorithm to open passages between adjacent cells).
@@ -97,16 +102,13 @@ class Cell {
  * the avatar within the labyrinth. The UI uses this to determine
  * visibility, rendering, and allowed moves.
  */
-class Player {
-    row: number;
-    col: number;
+class Player extends Positioned {
     /**
      * @param {number} row - starting row (default 0)
      * @param {number} col - starting column (default 0)
      */
     constructor(row = 0, col = 0) {
-        this.row = row;
-        this.col = col;
+        super(row, col);
     }
 
     /**
@@ -144,8 +146,8 @@ class Player {
  * cells) before special cells are assigned.
  */
 class Labyrinth {
-    rows: number;
-    cols: number;
+    num_rows: number;
+    num_cols: number;
     grid: Cell[][];
     exit: { row: number; col: number };
     /**
@@ -153,8 +155,8 @@ class Labyrinth {
      * @param {number} cols
      */
     constructor(rows: number, cols: number) {
-        this.rows = rows;
-        this.cols = cols;
+        this.num_rows = rows;
+        this.num_cols = cols;
         this.grid = this.generate();
         // Designate an exit roughly centered in the grid
         this.exit = {
@@ -184,12 +186,12 @@ class Labyrinth {
      * @returns {Cell[][]}
      */
     generate() {
-        const grid = Array.from({ length: this.rows }, (_, r) =>
-            Array.from({ length: this.cols }, (_, c) => new Cell(r, c))
+        const grid = Array.from({ length: this.num_rows }, (_, r) =>
+            Array.from({ length: this.num_cols }, (_, c) => new Cell(r, c))
         );
 
-        const visited = Array.from({ length: this.rows }, () =>
-            Array(this.cols).fill(false)
+        const visited = Array.from({ length: this.num_rows }, () =>
+            Array(this.num_cols).fill(false)
         );
 
         // Lightweight Fisher–Yates style shuffle (using sort for brevity)
@@ -211,8 +213,8 @@ class Labyrinth {
                 if (
                     nr >= 0 &&
                     nc >= 0 &&
-                    nr < this.rows &&
-                    nc < this.cols &&
+                    nr < this.num_rows &&
+                    nc < this.num_cols &&
                     !visited[nr][nc]
                 ) {
                     // Remove the wall between current and neighbor
@@ -227,11 +229,11 @@ class Labyrinth {
         carve(0, 0);
 
         // Mark some cells as special (avoid marking the central exit)
-        const cr = Math.floor(this.rows / 2);
-        const cc = Math.floor(this.cols / 2);
+        const cr = Math.floor(this.num_rows / 2);
+        const cc = Math.floor(this.num_cols / 2);
         grid[cr][cc].type = "exit";
-        for (let r = 0; r < this.rows; r++) {
-            for (let c = 0; c < this.cols; c++) {
+        for (let r = 0; r < this.num_rows; r++) {
+            for (let c = 0; c < this.num_cols; c++) {
                 if (
                     Math.random() < SPECIAL_CELL_PROBABILITY &&
                     !(r === cr && c === cc)

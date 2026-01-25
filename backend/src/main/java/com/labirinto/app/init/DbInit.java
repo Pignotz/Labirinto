@@ -2,6 +2,8 @@ package com.labirinto.app.init;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.boot.CommandLineRunner;
@@ -18,6 +20,8 @@ public class DbInit implements CommandLineRunner {
     private final PoetryRepository poetryRepository;
     private final PhotoRepository photoRepository;
 
+    private final String inputDataDir = "input-data";
+
     public DbInit(PoetryRepository poetryRepository, PhotoRepository photoRepository) {
         this.poetryRepository = poetryRepository;
         this.photoRepository = photoRepository;
@@ -31,7 +35,9 @@ public class DbInit implements CommandLineRunner {
 
     private void loadPhotos() {
         if(photoRepository.count() == 0){
+            Path inputDir = Paths.get(inputDataDir + "/images");
 
+            
         }else{
             System.out.println("DB già popolato con foto, nessuna azione.");
         } 
