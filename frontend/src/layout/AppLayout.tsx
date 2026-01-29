@@ -6,6 +6,7 @@ import { Card } from "@heroui/react";
 import LeftSideBar from "../components/LeftSideBar";
 import RightSideBar from "../components/RightSideBar";
 import PendingNav from "../components/PendingNav";
+import { User } from "../models/User";
 
 type PendingNavType =
     | { kind: "switch"; key: string }
@@ -16,6 +17,7 @@ export default function AppLayout() {
     const [showHelp, setShowHelp] = useState<boolean>(false);
     const [activeKey, setActiveKey] = useState<string>("play");
     const [pendingNav, setPendingNav] = useState<PendingNavType>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     const attemptSetActiveKey = (key: string) => {
         if (activeKey === "play" && !showHelp && key !== "play") {
@@ -48,7 +50,7 @@ export default function AppLayout() {
                 <LeftSideBar activeKey={activeKey} setActiveKey={attemptSetActiveKey} />
 
                 <Card className="flex-1 glass p-4 overflow-auto">
-                    {activeKey === "play" && <LabyrinthPage />}
+                    {activeKey === "play" && <LabyrinthPage selectedUser={selectedUser} />}
                     
 
                     {activeKey === "collectibles" && (
@@ -71,7 +73,7 @@ export default function AppLayout() {
                         </>
                     )}
                 </Card>
-                <RightSideBar className="" />
+                <RightSideBar className="" onUserSelected={setSelectedUser} selectedUser={selectedUser} />
             </div>
 
             <PendingNav

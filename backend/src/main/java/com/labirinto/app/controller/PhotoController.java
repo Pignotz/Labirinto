@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.labirinto.app.dto.PhotoRequest;
 import com.labirinto.app.entities.Photo;
 import com.labirinto.app.repository.PhotoRepository;
+import com.labirinto.app.repository.UserPhotoRepository;
 import com.labirinto.app.util.ColorExtractor;
 
 @RestController
@@ -23,9 +24,11 @@ import com.labirinto.app.util.ColorExtractor;
 public class PhotoController {
 
     private final PhotoRepository photoRepository;
+    private final UserPhotoRepository userPhotoRepository;
 
-    public PhotoController(PhotoRepository photoRepository) {
+    public PhotoController(PhotoRepository photoRepository, UserPhotoRepository userPhotoRepository) {
         this.photoRepository = photoRepository;
+        this.userPhotoRepository = userPhotoRepository;
     }
 
     @GetMapping("/list")
@@ -58,8 +61,24 @@ public class PhotoController {
     @GetMapping("/by-color/{color}")
     public List<Photo> getByColor(@PathVariable String color) {
         return photoRepository.findAll().stream()
-                .filter(photo -> color.equalsIgnoreCase(photo.representativeColor()))
+                .filter(photo -> color.equalsIgnoreCase(photo.getRepresentativeColor()))
                 .toList();
+    }
+
+    @GetMapping("/random-uncollected/{userId}")
+    public Photo getRandomUncollectedPhoto(@PathVariable Long userId) {
+        List<Photo> allPhotos = photoRepository.findAll();
+        List<Long> collectedPhotoIds = userPhotoRepository.findAll().stream()
+                .filter(up -> up.getId().getUserId().equals(userId))
+                .map(up -> up.getId().getPhotoId())
+                .toList();
+
+        // Find a photo that hasn't been collected
+        Optional<Photo> uncollectedPhoto = allPhotos.stream()
+                .filter(photo -> !collectedPhotoIds.contains(photo.getId()))
+                .findAny();
+
+        return uncollectedPhoto.orElse(null);
     }
 }
 

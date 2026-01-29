@@ -48,7 +48,7 @@ public class PoemController {
     public Poem update(@PathVariable Long id, @RequestBody PoemRequest poemRequest) {
         return poemRepository.findById(id)
                 .map(poem -> {
-                    Poem updatedPoem = new Poem(poem.id(), poemRequest.getTitle(), poemRequest.getText());
+                    Poem updatedPoem = new Poem(poem.getId(), poemRequest.getTitle(), poemRequest.getText());
                     return poemRepository.save(updatedPoem);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Poem not found with id: " + id));
@@ -67,7 +67,7 @@ public class PoemController {
     @GetMapping("/search/{title}")
     public List<Poem> searchByTitle(@PathVariable String title) {
         return poemRepository.findAll().stream()
-                .filter(poem -> poem.title() != null && poem.title().toLowerCase().contains(title.toLowerCase()))
+                .filter(poem -> poem.getTitle() != null && poem.getTitle().toLowerCase().contains(title.toLowerCase()))
                 .toList();
     }
 }

@@ -1,7 +1,6 @@
 package com.labirinto.app.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,14 +53,14 @@ public class UserPhotoController {
     @GetMapping("/user/{userId}")
     public List<UserPhoto> getByUserId(@PathVariable Long userId) {
         return userPhotoRepository.findAll().stream()
-                .filter(up -> up.id().userId().equals(userId))
+                .filter(up -> up.getId().getUserId().equals(userId))
                 .toList();
     }
 
     @GetMapping("/photo/{photoId}")
     public List<UserPhoto> getByPhotoId(@PathVariable Long photoId) {
         return userPhotoRepository.findAll().stream()
-                .filter(up -> up.id().photoId().equals(photoId))
+                .filter(up -> up.getId().getPhotoId().equals(photoId))
                 .toList();
     }
 }

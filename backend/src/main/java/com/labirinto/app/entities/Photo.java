@@ -5,15 +5,21 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-public record Photo(
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Photo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id,
+    private Long id;
     
     @Lob
-    byte[] image,
+    private byte[] image;
     
-    String representativeColor
-) {}
+    private String representativeColor;
+}

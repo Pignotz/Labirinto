@@ -53,14 +53,14 @@ public class UserPoemController {
     @GetMapping("/user/{userId}")
     public List<UserPoem> getByUserId(@PathVariable Long userId) {
         return userPoemRepository.findAll().stream()
-                .filter(up -> up.id().userId().equals(userId))
+                .filter(up -> up.getId().getUserId().equals(userId))
                 .toList();
     }
 
     @GetMapping("/poem/{poemId}")
     public List<UserPoem> getByPoemId(@PathVariable Long poemId) {
         return userPoemRepository.findAll().stream()
-                .filter(up -> up.id().poemId().equals(poemId))
+                .filter(up -> up.getId().getPoemId().equals(poemId))
                 .toList();
     }
 }

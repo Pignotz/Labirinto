@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import { fetchPoemList } from "../api/poemApi";
-import { Poem } from "../models/Poem";
+import { fetchPhotoList } from "../api/photoApi";
+import { Photo } from "../models/Photo";
 
-export function usePoetry() {
-    const [poems, setPoems] = useState<Poem[]>([]);
+export function usePhotos() {
+    const [photos, setPhotos] = useState<Photo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchPoemList()
-            .then(setPoems)
+        fetchPhotoList()
+            .then(setPhotos)
             .catch(err => setError(err.message))
             .finally(() => setLoading(false));
     }, []);
 
-    return { poems, loading, error };
+    return { photos, loading, error };
 }

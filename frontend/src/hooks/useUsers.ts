@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import { fetchPoemList } from "../api/poemApi";
-import { Poem } from "../models/Poem";
+import { fetchUserList } from "../api/userApi";
+import { User } from "../models/User";
 
-export function usePoetry() {
-    const [poems, setPoems] = useState<Poem[]>([]);
+export function useUsers() {
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchPoemList()
-            .then(setPoems)
+        fetchUserList()
+            .then(setUsers)
             .catch(err => setError(err.message))
             .finally(() => setLoading(false));
     }, []);
 
-    return { poems, loading, error };
+    return { users, loading, error };
 }

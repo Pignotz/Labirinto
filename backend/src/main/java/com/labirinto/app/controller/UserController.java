@@ -34,7 +34,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public Optional<User> getById(@PathVariable Long id) {
+    public Optional<User> getById(@PathVariable(required = true) Long id) {
         return userRepository.findById(id);
     }
 
@@ -48,7 +48,7 @@ public class UserController {
     public User update(@PathVariable Long id, @RequestBody UserRequest userRequest) {
         return userRepository.findById(id)
                 .map(user -> {
-                    User updatedUser = new User(user.id(), userRequest.getUsername());
+                    User updatedUser = new User(user.getId(), userRequest.getUsername());
                     return userRepository.save(updatedUser);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));

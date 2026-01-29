@@ -5,15 +5,24 @@ import java.io.Serializable;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-public record UserPoem(
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserPoem {
     @EmbeddedId
-    UserPoemId id
-) {
+    private UserPoemId id;
+    
     @Embeddable
-    public static record UserPoemId(
-        Long userId,
-        Long poemId
-    ) implements Serializable {}
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserPoemId implements Serializable {
+        private Long userId;
+        private Long poemId;
+    }
 }

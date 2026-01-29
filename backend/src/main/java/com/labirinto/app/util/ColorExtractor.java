@@ -48,24 +48,109 @@ public class ColorExtractor {
     private static String getDominantColor(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
-        Map<Integer, Integer> colorFrequency = new HashMap<>();
 
-        // Sample pixels to find most frequent color
+        // Use color quantization to group similar colors together before counting.
+        // This reduces the effect of small variations and noise that would make
+        // exact-RGB frequency counting unreliable for photographs.
+        // We'll quantize to 12 bits (4 bits per channel).
+        final Map<Integer, long[]> bucketMapAll = new HashMap<>();
+        final Map<Integer, long[]> bucketMapFiltered = new HashMap<>();
+        int totalSamples = 0;
+        int excludedSamples = 0;
+
+        final int LUMINANCE_MIN = 30;  // consider near-black as potential background
+        final int LUMINANCE_MAX = 240; // consider near-white as potential background
+
         for (int y = 0; y < height; y += SAMPLE_RATE) {
             for (int x = 0; x < width; x += SAMPLE_RATE) {
                 int rgb = image.getRGB(x, y);
-                // Remove alpha channel
-                rgb = rgb & 0xFFFFFF;
-                colorFrequency.put(rgb, colorFrequency.getOrDefault(rgb, 0) + 1);
+                int r = (rgb >> 16) & 0xFF;
+                int g = (rgb >> 8) & 0xFF;
+                int b = rgb & 0xFF;
+
+                totalSamples++;
+                double luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                boolean excluded = (luminance < LUMINANCE_MIN || luminance > LUMINANCE_MAX);
+                if (excluded) excludedSamples++;
+
+                // Quantize to 4 bits per channel
+                int rq = r >> 4;
+                int gq = g >> 4;
+                int bq = b >> 4;
+
+                int bucket = (rq << 8) | (gq << 4) | bq;
+
+                // Update ALL buckets
+                long[] statsAll = bucketMapAll.get(bucket);
+                if (statsAll == null) {
+                    statsAll = new long[4];
+                    bucketMapAll.put(bucket, statsAll);
+                }
+                statsAll[0] += 1;
+                statsAll[1] += r;
+                statsAll[2] += g;
+                statsAll[3] += b;
+
+                // Update FILTERED buckets (only non-excluded)
+                if (!excluded) {
+                    long[] statsF = bucketMapFiltered.get(bucket);
+                    if (statsF == null) {
+                        statsF = new long[4];
+                        bucketMapFiltered.put(bucket, statsF);
+                    }
+                    statsF[0] += 1;
+                    statsF[1] += r;
+                    statsF[2] += g;
+                    statsF[3] += b;
+                }
             }
         }
 
-        // Find the most frequent color
-        int dominantRGB = colorFrequency.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse(0xFFFFFF); // Default to white if empty
+        // Decide whether to use filtered buckets or fall back to all buckets
+        double excludedRatio = totalSamples == 0 ? 0.0 : (double) excludedSamples / (double) totalSamples;
+        final double EXCLUDED_RATIO_THRESHOLD = 0.40; // if too many excluded, use all pixels
 
+        Map<Integer, long[]> chosenMap = bucketMapFiltered;
+        if (bucketMapFiltered.isEmpty() || excludedRatio >= EXCLUDED_RATIO_THRESHOLD) {
+            chosenMap = bucketMapAll;
+        }
+
+        if (chosenMap.isEmpty()) {
+            // Fallback to average color if nothing useful
+            return getAverageColor(image);
+        }
+
+        // Score buckets using count weighted by saturation to favor colorful clusters
+        int bestBucket = -1;
+        double bestScore = -1.0;
+        for (Map.Entry<Integer, long[]> e : chosenMap.entrySet()) {
+            long[] st = e.getValue();
+            long count = st[0];
+            int avgR = (int) (st[1] / count);
+            int avgG = (int) (st[2] / count);
+            int avgB = (int) (st[3] / count);
+
+            int max = Math.max(avgR, Math.max(avgG, avgB));
+            int min = Math.min(avgR, Math.min(avgG, avgB));
+            double saturation = (max == 0) ? 0.0 : ((double) (max - min) / (double) max);
+
+            double score = count * (1.0 + saturation); // emphasize saturated colors
+            if (score > bestScore) {
+                bestScore = score;
+                bestBucket = e.getKey();
+            }
+        }
+
+        if (bestBucket == -1) {
+            return getAverageColor(image);
+        }
+
+        long[] bestStats = chosenMap.get(bestBucket);
+        int avgR = (int) (bestStats[1] / bestStats[0]);
+        int avgG = (int) (bestStats[2] / bestStats[0]);
+        int avgB = (int) (bestStats[3] / bestStats[0]);
+
+        int dominantRGB = (avgR << 16) | (avgG << 8) | avgB;
         return rgbToHex(dominantRGB);
     }
 

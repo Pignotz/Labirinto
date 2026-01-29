@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Card, CardBody, CardFooter, Button } from "@heroui/react";
+import { User } from "../models/User";
+import { Photo } from "../models/Photo";
+import { getRandomUncollectedPhoto } from "../api/randomPhotoApi.ts";
+import { addPhotoToUser } from "../api/userPhotoApi";
 
 // ==============================
 // CONFIG
@@ -52,6 +56,9 @@ class Cell extends Positioned {
         bottom: boolean;
         left: boolean;
     };
+    backgroundColor: string = "rgba(255,255,255,0.5)";
+    photo: Photo | null = null;
+
     constructor(row: number, col: number) {
         super(row, col);
         this.type = "normal";
@@ -70,7 +77,7 @@ class Cell extends Positioned {
      */
     hasWall(direction: direction): boolean {
         return this.walls[direction];
-        }
+    }
     /**
      * Remove the wall on this cell at `direction` (used by the
      * maze-carving algorithm to open passages between adjacent cells).
@@ -79,7 +86,6 @@ class Cell extends Positioned {
     removeWall(direction: "top" | "right" | "bottom" | "left") {
         this.walls[direction] = false;
     }
-
 
     /**
      * Return true if `other` is an orthogonally adjacent neighbor
@@ -91,6 +97,18 @@ class Cell extends Positioned {
         const dr = Math.abs(this.row - other.row);
         const dc = Math.abs(this.col - other.col);
         return dr + dc === 1;
+    }
+
+    /**
+     * Convert hex color to rgba with alpha
+     */
+    setBackgroundColorFromHex(hexColor: string | null, alpha: number = 1) {
+        if (!hexColor) return;
+        const hex = hexColor.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        this.backgroundColor = `rgba(${r},${g},${b},${alpha})`;
     }
 }
 
@@ -137,19 +155,14 @@ class Player extends Positioned {
 /**
  * Labyrinth encapsulates the grid of `Cell`s and contains the
  * maze-generation algorithm and helper methods used by the UI.
- *
- * Generation: uses a randomized depth-first search (recursive
- * backtracker). Starting at (0,0) it visits cells, shuffles the
- * four orthogonal directions, and carves passages by removing
- * walls between the current cell and an unvisited neighbor.
- * This produces a perfect maze (one unique path between any two
- * cells) before special cells are assigned.
  */
 class Labyrinth {
     num_rows: number;
     num_cols: number;
     grid: Cell[][];
     exit: { row: number; col: number };
+    specialCells: Cell[] = [];
+
     /**
      * @param {number} rows
      * @param {number} cols
@@ -172,18 +185,6 @@ class Labyrinth {
 
     /**
      * Generate a new maze grid and mark some cells as special.
-     * Implementation details:
-     *  - Build an empty grid of `Cell` instances.
-     *  - Use a `visited` boolean grid to track DFS progress.
-     *  - `shuffle` randomizes neighbor visitation order to produce
-     *    different maze layouts on each run.
-     *  - `carve` is the recursive DFS/backtracking function that
-     *    removes walls between the current cell and an unvisited
-     *    neighbor, then recurses into that neighbor.
-     *  - After carving, randomly mark non-center cells as `special`
-     *    based on `SPECIAL_CELL_PROBABILITY`.
-     *
-     * @returns {Cell[][]}
      */
     generate() {
         const grid = Array.from({ length: this.num_rows }, (_, r) =>
@@ -194,10 +195,8 @@ class Labyrinth {
             Array(this.num_cols).fill(false)
         );
 
-        // Lightweight Fisher–Yates style shuffle (using sort for brevity)
         const shuffle = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5);
 
-        // Recursive DFS/backtracker that carves passages
         const carve = (r: number, c: number) => {
             visited[r][c] = true;
 
@@ -217,7 +216,6 @@ class Labyrinth {
                     nc < this.num_cols &&
                     !visited[nr][nc]
                 ) {
-                    // Remove the wall between current and neighbor
                     grid[r][c].removeWall(w1);
                     grid[nr][nc].removeWall(w2);
                     carve(nr, nc);
@@ -225,13 +223,13 @@ class Labyrinth {
             }
         };
 
-        // Start carving from the top-left corner
         carve(0, 0);
 
-        // Mark some cells as special (avoid marking the central exit)
+        // Mark special cells
         const cr = Math.floor(this.num_rows / 2);
         const cc = Math.floor(this.num_cols / 2);
         grid[cr][cc].type = "exit";
+        
         for (let r = 0; r < this.num_rows; r++) {
             for (let c = 0; c < this.num_cols; c++) {
                 if (
@@ -239,6 +237,7 @@ class Labyrinth {
                     !(r === cr && c === cc)
                 ) {
                     grid[r][c].type = "special";
+                    this.specialCells.push(grid[r][c]);
                 }
             }
         }
@@ -247,13 +246,103 @@ class Labyrinth {
     }
 
     /**
-     * Determine whether the player can move by delta `(dr,dc)` from
-     * their current cell. Movement is blocked if the corresponding
-     * wall exists on the player's current cell.
-     * @param {Player} player
-     * @param {number} dr
-     * @param {number} dc
-     * @returns {boolean}
+     * Propagate color from special cells using fair multi-source BFS
+     * Each special cell expands one level at a time in round-robin fashion
+     * Ensures equal opportunity for each photo's color to spread through the maze
+     */
+    propagateColors() {
+        const coloredCells = new Map<string, { color: string; alpha: number }>();
+        
+        // Initialize: color special cells themselves with full opacity
+        for (const specialCell of this.specialCells) {
+            if (!specialCell.photo?.representativeColor) continue;
+            
+            const cellKey = `${specialCell.row}-${specialCell.col}`;
+            specialCell.setBackgroundColorFromHex(specialCell.photo.representativeColor, 1);
+            coloredCells.set(cellKey, {
+                color: specialCell.photo.representativeColor,
+                alpha: 1
+            });
+        }
+
+        // Multi-source BFS: each special cell gets one iteration per distance level
+        const frontiers = this.specialCells.map(cell => ({
+            cell,
+            nextCells: [cell],
+            distance: 0
+        }));
+
+        let maxDistance = 8;
+        let hasExpanded = true;
+
+        while (hasExpanded && frontiers[0].distance < maxDistance) {
+            hasExpanded = false;
+
+            // Round-robin through each special cell's frontier
+            for (const frontier of frontiers) {
+                const nextFrontier: Cell[] = [];
+
+                // Expand each cell in current frontier by one step
+                for (const cell of frontier.nextCells) {
+                    const neighbors: Cell[] = [];
+
+                    // Check all valid maze passages
+                    if (cell.row > 0 && !cell.hasWall("top")) {
+                        neighbors.push(this.getCell(cell.row - 1, cell.col));
+                    }
+                    if (cell.row < this.num_rows - 1 && !cell.hasWall("bottom")) {
+                        neighbors.push(this.getCell(cell.row + 1, cell.col));
+                    }
+                    if (cell.col > 0 && !cell.hasWall("left")) {
+                        neighbors.push(this.getCell(cell.row, cell.col - 1));
+                    }
+                    if (cell.col < this.num_cols - 1 && !cell.hasWall("right")) {
+                        neighbors.push(this.getCell(cell.row, cell.col + 1));
+                    }
+
+                    // Color uncolored neighbors
+                    for (const neighbor of neighbors) {
+                        const neighborKey = `${neighbor.row}-${neighbor.col}`;
+                        if (!coloredCells.has(neighborKey) && frontier.cell.photo?.representativeColor) {
+                            const alpha = Math.max(0.1, 1 - frontier.distance * 0.12);
+                            // Adjust alpha based on color saturation to reduce influence of near-gray colors
+                            let adjustedAlpha = alpha;
+                            try {
+                                const hex = (frontier.cell.photo.representativeColor || "").replace("#", "");
+                                if (hex.length === 6) {
+                                    const rr = parseInt(hex.substring(0, 2), 16);
+                                    const gg = parseInt(hex.substring(2, 4), 16);
+                                    const bb = parseInt(hex.substring(4, 6), 16);
+                                    const mx = Math.max(rr, gg, bb);
+                                    const mn = Math.min(rr, gg, bb);
+                                    const sat = mx === 0 ? 0 : (mx - mn) / mx;
+                                    const scale = 0.5 + sat * 0.5; // range 0.5..1.0
+                                    adjustedAlpha = Math.min(1, Math.max(0, alpha * scale));
+                                }
+                            } catch (e) {
+                                // ignore and use unmodified alpha
+                            }
+
+                            neighbor.setBackgroundColorFromHex(frontier.cell.photo.representativeColor, adjustedAlpha);
+                            coloredCells.set(neighborKey, {
+                                color: frontier.cell.photo.representativeColor,
+                                alpha: adjustedAlpha
+                            });
+                            nextFrontier.push(neighbor);
+                            hasExpanded = true;
+                        }
+                    }
+                }
+
+                // Update frontier for next iteration
+                frontier.nextCells = nextFrontier;
+                frontier.distance++;
+            }
+        }
+    }
+
+    /**
+     * Determine whether the player can move
      */
     canMove(player: Player, dr: number, dc: number): boolean {
         const cell = this.getCell(player.row, player.col);
@@ -265,13 +354,7 @@ class Labyrinth {
     }
 
     /**
-     * Visibility rules for the player: a cell is visible if it is within
-     * `VISION_RADIUS` Manhattan distance and either is the player's own
-     * cell or an immediate neighbor that is not blocked by a wall on the
-     * player's current cell. This keeps visibility simple and deterministic.
-     * @param {Player} player
-     * @param {Cell} cell
-     * @returns {boolean}
+     * Visibility rules for the player
      */
     isVisible(player: Player, cell: Cell) {
         const dist =
@@ -299,18 +382,45 @@ class Labyrinth {
 // ==============================
 // MAIN COMPONENT
 // ==============================
-export default function LabyrinthPage() {
-    const labyrinth = useMemo(
-        () => new Labyrinth(ROWS, COLS),
-        []
-    );
+type Props = {
+    selectedUser: User | null;
+};
 
+export default function LabyrinthPage({ selectedUser }: Props) {
+    const [labyrinth, setLabyrinth] = useState<Labyrinth | null>(null);
     const [player, setPlayer] = useState(() => new Player());
-    const [overlayImg, setOverlayImg] = useState(null);
+    const [overlayImg, setOverlayImg] = useState<Photo | null>(null);
     const [fullVision] = useState(true);
+    const [loading, setLoading] = useState(true);
+
+    // Initialize labyrinth and load photos for special cells
+    useEffect(() => {
+        const initializeGame = async () => {
+            const newLabyrinth = new Labyrinth(ROWS, COLS);
+            
+            if (selectedUser) {
+                // Load random uncollected photos for each special cell
+                for (const specialCell of newLabyrinth.specialCells) {
+                    const photo = await getRandomUncollectedPhoto(selectedUser.id);
+                    if (photo) {
+                        specialCell.photo = photo;
+                    }
+                }
+
+                // Propagate colors after all photos are assigned
+                newLabyrinth.propagateColors();
+            }
+
+            setLabyrinth(newLabyrinth);
+            setLoading(false);
+        };
+
+        initializeGame();
+    }, [selectedUser]);
 
     const move = useCallback(
         (dr: number, dc: number) => {
+            if (!labyrinth) return;
             if (!labyrinth.canMove(player, dr, dc)) return;
 
             const nr = player.row + dr;
@@ -320,14 +430,17 @@ export default function LabyrinthPage() {
             const newPlayer = new Player(nr, nc);
             setPlayer(newPlayer);
 
-            if (target.type === "special") {
-                fetch("/api/photo")
-                    .then(r => r.json())
-                    .then(d => setOverlayImg(d.url));
+            if (target.type === "special" && target.photo && selectedUser) {
+                setOverlayImg(target.photo);
+                // Mark photo as collected
+                addPhotoToUser(selectedUser.id, target.photo.id).catch(err =>
+                    console.error("Error collecting photo:", err)
+                );
             }
         },
-        [player, labyrinth]
+        [player, labyrinth, selectedUser]
     );
+
     // Handle keyboard input for movement
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -340,18 +453,33 @@ export default function LabyrinthPage() {
         return () => window.removeEventListener("keydown", onKey);
     }, [move]);
 
+    if (loading) {
+        return <div className="flex-1 h-full flex items-center justify-center">Caricamento labirinto...</div>;
+    }
+
+    if (!labyrinth) {
+        return <div className="flex-1 h-full flex items-center justify-center">Errore nel caricamento del labirinto</div>;
+    }
+
+    if (!selectedUser) {
+        return <div className="flex-1 h-full flex items-center justify-center">Seleziona un giocatore per iniziare</div>;
+    }
+
     const wall = (hasWall: boolean) =>
         hasWall
             ? `2px solid ${COLORS.wall.solid}`
             : `2px solid ${COLORS.wall.transparent}`;
+
     return (
         <>
-            <div className="flex-1 h-full">
-                <div className="flex justify-center pt-4"
+            <div className="flex-1 h-full flex flex-col">
+                <div className="flex justify-center pt-4 flex-1 overflow-auto"
                     style={{
                         display: "grid",
                         gridTemplateColumns: `repeat(${COLS}, 32px)`,
                         lineHeight: 0,
+                        width: "fit-content",
+                        margin: "0 auto",
                     }}
                 >
                     {labyrinth.grid.flat().map((cell: Cell) => {
@@ -373,7 +501,7 @@ export default function LabyrinthPage() {
                                     width: 32,
                                     height: 32,
                                     background: visible
-                                        ? COLORS.cell.visible
+                                        ? cell.backgroundColor
                                         : COLORS.cell.hidden,
                                     borderTop: wall(cell.walls.top),
                                     borderRight: wall(cell.walls.right),
@@ -403,6 +531,49 @@ export default function LabyrinthPage() {
                     })}
                 </div>
             </div>
+
+            {overlayImg && (
+                <div 
+                    className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm" 
+                    onClick={() => setOverlayImg(null)}
+                >
+                    <Card className="max-w-xl w-full mx-4 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 shadow-2xl">
+                        <CardBody className="gap-4">
+                            <div className="flex items-center justify-center animate-pulse">
+                                <span className="text-4xl">✨</span>
+                            </div>
+                            <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
+                                Foto Raccolta!
+                            </h2>
+                            <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
+                                <img
+                                    src={overlayImg.getImageUrl()}
+                                    alt="Foto raccolta"
+                                    className="w-full h-auto object-cover max-h-96"
+                                />
+                                <div 
+                                    className="absolute inset-0 pointer-events-none rounded-lg"
+                                    style={{
+                                        boxShadow: `inset 0 0 40px ${overlayImg.representativeColor || "rgba(255,255,255,0.2)"}`,
+                                    }}
+                                />
+                            </div>
+                            <p className="text-center text-sm text-gray-300">
+                                Scopri i segreti del labirinto, una foto alla volta...
+                            </p>
+                        </CardBody>
+                        <CardFooter className="flex gap-2 justify-center">
+                            <Button
+                                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
+                                onPress={() => setOverlayImg(null)}
+                                size="lg"
+                            >
+                                Continua l'Avventura
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </div>
+            )}
         </>
     );
 }
