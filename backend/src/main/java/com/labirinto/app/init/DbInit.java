@@ -16,6 +16,7 @@ import com.labirinto.app.entities.Photo;
 import com.labirinto.app.entities.Poem;
 import com.labirinto.app.repository.PhotoRepository;
 import com.labirinto.app.repository.PoemRepository;
+import com.labirinto.app.util.ColorExtractor;
 
 @Component
 public class DbInit implements CommandLineRunner {
@@ -44,9 +45,9 @@ public class DbInit implements CommandLineRunner {
             try {
                 Files.list(inputDir).forEach(filePath -> {
                     try {
-                        byte[] data = Files.readAllBytes(filePath);
-                        Photo photo = new Photo();
-                        photo.setImage(data);
+                        byte[] image = Files.readAllBytes(filePath);
+                        String representativeColor = ColorExtractor.extractRepresentativeColor(image);
+                        Photo photo = new Photo(null, image, representativeColor);
                         photoRepository.save(photo);
                     } catch (IOException e) {
                         System.err.println("Errore nel caricamento della foto: " + filePath.getFileName());

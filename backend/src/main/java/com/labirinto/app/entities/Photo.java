@@ -7,29 +7,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 
 @Entity
-public class Photo {
-
+public record Photo(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
+    Long id,
+    
     @Lob
-    private byte[] image;
-
-    // --- Getters & Setters ---
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public byte[] getImage() {
-        return image;
-    }
-
-    public void setImage(byte[] image) {
-        this.image = image;
-    }
-}
+    byte[] image,
+    
+    String representativeColor
+) {}
