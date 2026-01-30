@@ -61,7 +61,6 @@ public class DbInit implements CommandLineRunner {
         }
     }
 
-    @SuppressWarnings("null")
     private void loadPoems() throws IOException {
         if (poetryRepository.count() == 0) {
             Path jsonPath = Paths.get("input-data", "poems.json");

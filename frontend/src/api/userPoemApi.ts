@@ -8,13 +8,13 @@ export async function fetchUserPoemList() {
 }
 
 // Add poem to user
-export async function addPoemToUser(userId, poemId) {
+export async function addPoemToUser(userId: number, poemId: number) {
     const data = await httpPost("/api/user_poem/add", { userId, poemId });
     return UserPoem.fromJson(data);
 }
 
 // Remove poem from user
-export function removePoemFromUser(userId, poemId) {
+export function removePoemFromUser(userId: number, poemId: number) {
     return httpDelete(`/api/user_poem/${userId}/${poemId}`);
 }
 
@@ -24,13 +24,13 @@ export function getUserPoemCount() {
 }
 
 // Get all poems for a specific user
-export async function getUserPoems(userId) {
+export async function getUserPoems(userId: number) {
     const data = await httpGet(`/api/user_poem/user/${userId}`);
     return UserPoem.fromJsonArray(data);
 }
 
 // Get all users who have a specific poem
-export async function getPoemUsers(poemId) {
+export async function getPoemUsers(poemId: number) {
     const data = await httpGet(`/api/user_poem/poem/${poemId}`);
     return UserPoem.fromJsonArray(data);
 }

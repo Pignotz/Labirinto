@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { Card, CardBody, CardFooter, Button } from "@heroui/react";
 import { User } from "../models/User";
 import { Photo } from "../models/Photo";
-import { getRandomUncollectedPhoto } from "../api/randomPhotoApi.ts";
 import { addPhotoToUser } from "../api/userPhotoApi";
+import { getRandomUncollectedPhoto } from "../api/photoApi";
 
 // ==============================
 // CONFIG
@@ -400,10 +400,12 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             
             if (selectedUser) {
                 // Load random uncollected photos for each special cell
+                const excludedPhotoIds: number[] = [];
                 for (const specialCell of newLabyrinth.specialCells) {
-                    const photo = await getRandomUncollectedPhoto(selectedUser.id);
+                    const photo = await getRandomUncollectedPhoto(selectedUser.id, excludedPhotoIds);
                     if (photo) {
                         specialCell.photo = photo;
+                        excludedPhotoIds.push(photo.id);
                     }
                 }
 
@@ -433,7 +435,7 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             if (target.type === "special" && target.photo && selectedUser) {
                 setOverlayImg(target.photo);
                 // Mark photo as collected
-                addPhotoToUser(selectedUser.id, target.photo.id).catch(err =>
+                addPhotoToUser(selectedUser.id, target.photo.id).catch((err: any) =>
                     console.error("Error collecting photo:", err)
                 );
             }

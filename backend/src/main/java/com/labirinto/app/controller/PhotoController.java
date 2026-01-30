@@ -3,6 +3,9 @@ package com.labirinto.app.controller;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.labirinto.app.dto.PhotoRequest;
@@ -80,5 +84,21 @@ public class PhotoController {
 
         return uncollectedPhoto.orElse(null);
     }
+
+@GetMapping("/random-uncollected-with-exclusion/{userId}")
+public ResponseEntity<Photo> getRandomUncollectedWithExclusionPhoto(
+        @PathVariable Long userId,
+        @RequestParam(required = false) List<Long> excludedPhotoIds) {
+
+    Page<Photo> page = userPhotoRepository.findUncollectedWithExclusion(
+            userId,
+            excludedPhotoIds,
+            PageRequest.of(0, 1)
+    );
+
+    return page.hasContent()
+            ? ResponseEntity.ok(page.getContent().get(0))
+            : ResponseEntity.noContent().build();
 }
 
+}

@@ -8,13 +8,13 @@ export async function fetchUserPhotoList() {
 }
 
 // Add photo to user
-export async function addPhotoToUser(userId, photoId) {
+export async function addPhotoToUser(userId: number, photoId: number) {
     const data = await httpPost("/api/user_photo/add", { userId, photoId });
     return UserPhoto.fromJson(data);
 }
 
 // Remove photo from user
-export function removePhotoFromUser(userId, photoId) {
+export function removePhotoFromUser(userId: number, photoId: number) {
     return httpDelete(`/api/user_photo/${userId}/${photoId}`);
 }
 
@@ -24,13 +24,13 @@ export function getUserPhotoCount() {
 }
 
 // Get all photos for a specific user
-export async function getUserPhotos(userId) {
+export async function getUserPhotos(userId: number) {
     const data = await httpGet(`/api/user_photo/user/${userId}`);
     return UserPhoto.fromJsonArray(data);
 }
 
 // Get all users who have a specific photo
-export async function getPhotoUsers(photoId) {
+export async function getPhotoUsers(photoId: number) {
     const data = await httpGet(`/api/user_photo/photo/${photoId}`);
     return UserPhoto.fromJsonArray(data);
 }

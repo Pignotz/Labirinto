@@ -8,25 +8,25 @@ export async function fetchPoemList() {
 }
 
 // Get poem by ID
-export async function fetchPoemById(id) {
+export async function fetchPoemById(id: number) {
     const data = await httpGet(`/api/poem/${id}`);
     return Poem.fromJson(data);
 }
 
 // Create new poem
-export async function createPoem(title, text) {
+export async function createPoem(title: string, text: string) {
     const data = await httpPost("/api/poem/add", { title, text });
     return Poem.fromJson(data);
 }
 
 // Update poem
-export async function updatePoem(id, title, text) {
+export async function updatePoem(id: number, title: string, text: string) {
     const data = await httpPut(`/api/poem/${id}`, { title, text });
     return Poem.fromJson(data);
 }
 
 // Delete poem
-export function deletePoem(id) {
+export function deletePoem(id: number) {
     return httpDelete(`/api/poem/${id}`);
 }
 
@@ -36,7 +36,7 @@ export function getPoemCount() {
 }
 
 // Search poems by title
-export async function searchPoemsByTitle(title) {
+export async function searchPoemsByTitle(title: string) {
     const data = await httpGet(`/api/poem/search/${title}`);
     return Poem.fromJsonArray(data);
 }
