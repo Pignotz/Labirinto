@@ -23,13 +23,18 @@ export class Photo {
             representativeColor: this.representativeColor
         };
     }
-
-    getImageUrl(): string {
-        if (typeof this.image === 'string') {
-            return this.image;
-        }
-        // If it's an ArrayBuffer, create a data URL
-        const blob = new Blob([this.image], { type: 'image/jpeg' });
-        return URL.createObjectURL(blob);
+getImageUrl(): string {
+    if (typeof this.image === 'string') {
+        return this.image;
     }
+    
+    // Converti ArrayBuffer in Base64
+    const bytes = new Uint8Array(this.image);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    return `data:image/jpeg;base64,${base64}`;
+}
 }

@@ -4,7 +4,8 @@ import { User } from "../models/User";
 import { Photo } from "../models/Photo";
 import { addPhotoToUser } from "../api/userPhotoApi";
 import { getRandomUncollectedPhoto } from "../api/photoApi";
-
+import GlassCard from "../components/GlassCard";
+import MyButton from "../components/MyButton";
 // ==============================
 // CONFIG
 // ==============================
@@ -432,7 +433,9 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             const newPlayer = new Player(nr, nc);
             setPlayer(newPlayer);
 
-            if (target.type === "special" && target.photo && selectedUser) {
+            if (target.type === "special" 
+                && target.photo 
+                && selectedUser) {
                 setOverlayImg(target.photo);
                 // Mark photo as collected
                 addPhotoToUser(selectedUser.id, target.photo.id).catch((err: any) =>
@@ -535,12 +538,7 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             </div>
 
             {overlayImg && (
-                <div 
-                    className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm" 
-                    onClick={() => setOverlayImg(null)}
-                >
-                    <Card className="max-w-xl w-full mx-4 bg-linear-to-br from-gray-900 to-gray-800 border border-gray-700 shadow-2xl">
-                        <CardBody className="gap-4">
+                    <GlassCard className="fixed inset-0 bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div className="flex items-center justify-center animate-pulse">
                                 <span className="text-4xl">✨</span>
                             </div>
@@ -563,18 +561,15 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                             <p className="text-center text-sm text-gray-300">
                                 Scopri i segreti del labirinto, una foto alla volta...
                             </p>
-                        </CardBody>
                         <CardFooter className="flex gap-2 justify-center">
-                            <Button
+                            <MyButton
                                 className="bg-linear-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
                                 onPress={() => setOverlayImg(null)}
-                                size="lg"
                             >
                                 Continua l'Avventura
-                            </Button>
+                            </MyButton>
                         </CardFooter>
-                    </Card>
-                </div>
+                    </GlassCard>
             )}
         </>
     );
