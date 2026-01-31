@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,7 +25,7 @@ public class DbInit implements CommandLineRunner {
     private final PoemRepository poetryRepository;
     private final PhotoRepository photoRepository;
 
-    @Value("${app.input-data-path:input-data}")
+    @Value("${app.input-data-path:/static}")
     private String inputDataDir;
 
     public DbInit(PoemRepository poetryRepository, PhotoRepository photoRepository) {
@@ -40,10 +41,10 @@ public class DbInit implements CommandLineRunner {
 
     private void loadPhotos() {
         if (photoRepository.count() == 0) {
-            Path inputDir = Paths.get(inputDataDir + "/images");
-            System.out.println("Popolando DB con foto da " + inputDir.toAbsolutePath());
+            ClassPathResource inputDir = new ClassPathResource(inputDataDir + "/images");
+            System.out.println("Popolando DB con foto da " + inputDir.getFilename());
             try {
-                Files.list(inputDir).forEach(filePath -> {
+                Files.list(Paths.get(inputDir.getURI())).forEach(filePath -> {
                     try {
                         byte[] image = Files.readAllBytes(filePath);
                         String representativeColor = ColorExtractor.extractRepresentativeColor(image);
@@ -63,11 +64,12 @@ public class DbInit implements CommandLineRunner {
 
     private void loadPoems() throws IOException {
         if (poetryRepository.count() == 0) {
-            Path jsonPath = Paths.get("input-data", "poems.json");
-            System.out.println("Popolando DB con dati iniziali...");
+        ClassPathResource resource =
+        new ClassPathResource("static/poems.json");
+                    System.out.println("Popolando DB con dati iniziali...");
             ObjectMapper mapper = new ObjectMapper();
             List<Poem> poems = mapper.readValue(
-                Files.readString(jsonPath),
+                Files.readString(resource.getFile().toPath()),
                 new TypeReference<List<Poem>>() {}
             );
             poetryRepository.saveAll(poems);

@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -100,5 +101,14 @@ public ResponseEntity<Photo> getRandomUncollectedWithExclusionPhoto(
             ? ResponseEntity.ok(page.getContent().get(0))
             : ResponseEntity.noContent().build();
 }
+
+@GetMapping("/{id}/image")
+public ResponseEntity<byte[]> getPhotoImage(@PathVariable Long id) {
+    Photo photo = photoRepository.findById(id).orElseThrow();
+    return ResponseEntity.ok()
+        .contentType(MediaType.IMAGE_JPEG)
+        .body(photo.getImage());
+}
+
 
 }

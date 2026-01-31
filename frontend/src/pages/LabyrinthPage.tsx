@@ -547,7 +547,7 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                             </h2>
                             <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
                                 <img
-                                    src={overlayImg.getImageUrl()}
+                                    src={`/api/photo/${overlayImg.id}/image`}
                                     alt="Foto raccolta"
                                     className="w-full h-auto object-cover max-h-96"
                                 />
