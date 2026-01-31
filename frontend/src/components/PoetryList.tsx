@@ -3,7 +3,7 @@ import { Poem } from "../models/Poem";
 
 type Props = { items: Poem[] };
 
-export default function PoetryList({ items }: Props): JSX.Element {
+export default function PoetryList({ items }: Props) {
     return (
         <ul className="space-y-2">
             {items.map((poem) => (

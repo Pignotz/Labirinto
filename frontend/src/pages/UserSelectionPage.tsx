@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Card, Button, Input, Select, SelectItem, Spinner } from "@heroui/react";
+import { Button, Card, Input, Spinner } from "@heroui/react";
 import { User } from "../models/User";
-import { fetchUserList, createUser } from "../api/userApi";
-
+import { useEffect, useState } from "react";
+import { createUser, fetchUserList } from "../api/userApi";
+import GlassCard from "../components/GlassCard";
+import MyButton from "../components/MyButton";
 type Props = {
-    onUserSelected: (user: User) => void;
-    selectedUser: User | null;
+    onUserSelected: (u: User) => void;
 };
 
-export default function UserSelector({ onUserSelected, selectedUser }: Props) {
+export default function UserSelectionPage({ onUserSelected }: Props) {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [newUsername, setNewUsername] = useState("");
@@ -57,50 +57,39 @@ export default function UserSelector({ onUserSelected, selectedUser }: Props) {
 
     if (loading) {
         return (
-            <Card className="flex flex-col glass p-4 justify-center items-center">
+            <GlassCard  className="flex flex-col p-4 justify-center items-center">
                 <Spinner label="Caricamento utenti..." />
-            </Card>
+            </GlassCard>
         );
     }
 
     return (
-        <Card className="flex flex-col glass p-4 gap-4">
-            <div>
-                <h3 className="text-lg font-bold mb-2">Scegli Giocatore</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                    Max 3 giocatori
-                    {users.length > 0 && ` (${users.length}/3)`}
-                </p>
-            </div>
-
-            {users.length > 0 && (
+        <div className="flex items-center justify-center h-screen background">
+            <GlassCard className="p-6 w-100">
+                <h2 className="text-xl font-bold mb-4">Scegli il tuo salvataggio</h2>
+                {users.length > 0 && (
                 <div className="flex flex-col gap-2">
                     {users.map((user) => (
-                        <Button
+                        <MyButton
+                            className="bg-pink-300 text-rose-900 hover:bg-pink-400"                            
                             key={user.id}
-                            className={`w-full ${
-                                selectedUser?.id === user.id
-                                    ? "bg-purple-600"
-                                    : "bg-gray-700 hover:bg-gray-600"
-                            }`}
                             onPress={() => handleSelectUser(user.id.toString())}
                         >
                             {user.username}
-                        </Button>
+                        </MyButton>
                     ))}
                 </div>
             )}
 
-            {users.length < 3 && (
+            {(
                 <div>
                     {!showCreateForm ? (
-                        <Button
-                            color="secondary"
-                            className="w-full"
+                        <MyButton
                             onPress={() => setShowCreateForm(true)}
+                            className="w-full"
                         >
                             + Nuovo Giocatore
-                        </Button>
+                        </MyButton>
                     ) : (
                         <div className="flex flex-col gap-2">
                             <Input
@@ -135,14 +124,7 @@ export default function UserSelector({ onUserSelected, selectedUser }: Props) {
                     )}
                 </div>
             )}
-
-            {selectedUser && (
-                <div className="mt-4 p-3 bg-purple-900 rounded-lg">
-                    <p className="text-sm">
-                        <span className="font-bold">Giocatore attivo:</span> {selectedUser.username}
-                    </p>
-                </div>
-            )}
-        </Card>
+            </GlassCard>
+        </div>
     );
 }

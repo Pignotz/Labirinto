@@ -539,12 +539,12 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                     className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm" 
                     onClick={() => setOverlayImg(null)}
                 >
-                    <Card className="max-w-xl w-full mx-4 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 shadow-2xl">
+                    <Card className="max-w-xl w-full mx-4 bg-linear-to-br from-gray-900 to-gray-800 border border-gray-700 shadow-2xl">
                         <CardBody className="gap-4">
                             <div className="flex items-center justify-center animate-pulse">
                                 <span className="text-4xl">✨</span>
                             </div>
-                            <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-400">
+                            <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
                                 Foto Raccolta!
                             </h2>
                             <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
@@ -566,7 +566,7 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                         </CardBody>
                         <CardFooter className="flex gap-2 justify-center">
                             <Button
-                                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
+                                className="bg-linear-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
                                 onPress={() => setOverlayImg(null)}
                                 size="lg"
                             >

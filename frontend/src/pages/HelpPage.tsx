@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardBody, CardHeader } from "@heroui/react";
 
-export default function HelpPage(): JSX.Element {
+export default function HelpPage() {
     return (
         <div className="p-4">
             <Card>

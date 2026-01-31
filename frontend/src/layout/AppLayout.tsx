@@ -7,6 +7,8 @@ import LeftSideBar from "../components/LeftSideBar";
 import RightSideBar from "../components/RightSideBar";
 import PendingNav from "../components/PendingNav";
 import { User } from "../models/User";
+import UserSelectionPage from "../pages/UserSelectionPage";
+import GlassCard from "../components/GlassCard";
 
 type PendingNavType =
     | { kind: "switch"; key: string }
@@ -18,6 +20,10 @@ export default function AppLayout() {
     const [activeKey, setActiveKey] = useState<string>("play");
     const [pendingNav, setPendingNav] = useState<PendingNavType>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    if (!selectedUser) {
+        return <UserSelectionPage onUserSelected={setSelectedUser} />;
+    }
 
     const attemptSetActiveKey = (key: string) => {
         if (activeKey === "play" && !showHelp && key !== "play") {
@@ -49,7 +55,7 @@ export default function AppLayout() {
             <div className="grid grid-cols-[200px_1fr_200px] w-full h-100vh">
                 <LeftSideBar activeKey={activeKey} setActiveKey={attemptSetActiveKey} />
 
-                <Card className="flex-1 glass p-4 overflow-auto">
+                <GlassCard  className="flex-1 p-4 overflow-auto">
                     {activeKey === "play" && <LabyrinthPage selectedUser={selectedUser} />}
                     
 
@@ -72,10 +78,9 @@ export default function AppLayout() {
                             </ul>
                         </>
                     )}
-                </Card>
-                <RightSideBar className="" onUserSelected={setSelectedUser} selectedUser={selectedUser} />
+                </GlassCard>
+                <RightSideBar selectedUser={selectedUser} />
             </div>
-
             <PendingNav
                 pendingNav={pendingNav}
                 onCancel={() => setPendingNav(null)}

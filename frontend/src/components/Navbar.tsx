@@ -1,14 +1,15 @@
 import React, { useState } from "react";
 import { Navbar as HeroNavbar, NavbarBrand } from "@heroui/react";
 import LogoMaze from "./LogoMaze";
-
+import GlassCard from "./GlassCard";
 type Props = { onHelpToggle: () => void };
 
-export default function Navbar({ onHelpToggle }: Props): JSX.Element {
+export default function Navbar({ onHelpToggle }: Props) {
     const [open, setOpen] = useState<boolean>(false);
 
     return (
-        <HeroNavbar className="text-black/90 glass">
+        <GlassCard>
+        <HeroNavbar className="text-black/90">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between py-3">
                 <NavbarBrand>
                     <div className="flex items-left gap-3">
@@ -56,5 +57,6 @@ export default function Navbar({ onHelpToggle }: Props): JSX.Element {
                 </div>
             )}
         </HeroNavbar>
+        </GlassCard>
     );
 }
