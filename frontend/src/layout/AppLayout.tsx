@@ -57,8 +57,6 @@ export default function AppLayout() {
 
                 <GlassCard  className="flex-1 p-4 overflow-auto">
                     {activeKey === "play" && <LabyrinthPage selectedUser={selectedUser} />}
-                    
-
                     {activeKey === "collectibles" && (
                         <div className="h-full">
                             <h2 className="text-xl font-bold mb-2">Collezionabili</h2>

@@ -31,6 +31,13 @@ const COLORS = {
 type cellType = "normal" | "special" | "exit";
 type direction = "top" | "right" | "bottom" | "left";
 
+const ICONS = {
+    playerIcon: "👩",
+    heartCellIcon: "❤️",
+    //Icona di una fotografia
+    specialCellIcon: "✨",
+};
+
 class Positioned {
     row: number;
     col: number;
@@ -122,23 +129,19 @@ class Cell extends Positioned {
  * visibility, rendering, and allowed moves.
  */
 class Player extends Positioned {
+    
+    lastTryMoveDirection: direction | null = null;
+    numCarveActions: number = 0;
     /**
      * @param {number} row - starting row (default 0)
      * @param {number} col - starting column (default 0)
+     * @param {direction} lastMoveDirection - last move direction (default null)
+     * @param {number} numCarveActions - number of times the player has carved a wall (default 0)
      */
-    constructor(row = 0, col = 0) {
+    constructor(row = 0, col = 0, lastMoveDirection: direction | null = null, numCarveActions = 5) {
         super(row, col);
-    }
-
-    /**
-     * Move the player to absolute grid coordinates.
-     * Note: movement validity should be checked with `Labyrinth.canMove`.
-     * @param {number} row
-     * @param {number} col
-     */
-    moveTo(row: number, col: number) {
-        this.row = row;
-        this.col = col;
+        this.lastTryMoveDirection = lastMoveDirection;
+        this.numCarveActions = numCarveActions;
     }
 
     /**
@@ -147,6 +150,42 @@ class Player extends Positioned {
      */
     isAt(cell: Cell): boolean {
         return this.row === cell.row && this.col === cell.col;
+    }
+
+    carveWall(direction: direction, labyrinth: Labyrinth) {
+        // This method can be used for player-triggered wall removal if desired
+            const currentCell = labyrinth.getCell(this.row, this.col);
+            if (currentCell.hasWall(direction)) {
+                currentCell.removeWall(direction);
+                this.numCarveActions = Math.max(0, this.numCarveActions - 1);   
+                // Also remove the opposite wall in the adjacent cell
+                let adjacentRow = this.row;
+                let adjacentCol = this.col;
+                let oppositeDirection: direction;
+
+                if (direction === "top") {
+                    adjacentRow -= 1;
+                    oppositeDirection = "bottom";
+                } else if (direction === "right") {
+                    adjacentCol += 1;
+                    oppositeDirection = "left";
+                } else if (direction === "bottom") {
+                    adjacentRow += 1;
+                    oppositeDirection = "top";
+                } else {
+                    adjacentCol -= 1;
+                    oppositeDirection = "right";
+                }
+                // Ensure adjacent cell is within bounds before removing opposite wall
+                if (
+                    adjacentRow >= 0 &&
+                    adjacentRow < labyrinth.num_rows &&
+                    adjacentCol >= 0 &&
+                    adjacentCol < labyrinth.num_cols
+                ) {
+                    labyrinth.getCell(adjacentRow, adjacentCol).removeWall(oppositeDirection);
+                }
+            }
     }
 }
 
@@ -161,22 +200,17 @@ class Labyrinth {
     num_rows: number;
     num_cols: number;
     grid: Cell[][];
-    exit: { row: number; col: number };
     specialCells: Cell[] = [];
 
     /**
      * @param {number} rows
      * @param {number} cols
      */
-    constructor(rows: number, cols: number) {
+    constructor(rows: number, cols: number, grid?: Cell[][], specialCells?: Cell[]) {
         this.num_rows = rows;
         this.num_cols = cols;
-        this.grid = this.generate();
-        // Designate an exit roughly centered in the grid
-        this.exit = {
-            row: Math.floor(rows / 2),
-            col: Math.floor(cols / 2),
-        };
+        this.specialCells = specialCells || [];
+        this.grid = grid || this.generate();
     }
 
     /** Return the `Cell` at absolute grid coordinates */
@@ -187,7 +221,7 @@ class Labyrinth {
     /**
      * Generate a new maze grid and mark some cells as special.
      */
-    generate() {
+    generate(): Cell[][] {
         const grid = Array.from({ length: this.num_rows }, (_, r) =>
             Array.from({ length: this.num_cols }, (_, c) => new Cell(r, c))
         );
@@ -357,7 +391,7 @@ class Labyrinth {
     /**
      * Visibility rules for the player
      */
-    isVisible(player: Player, cell: Cell) {
+    isVisible(player: Player, cell: Cell): boolean {
         const dist =
             Math.abs(player.row - cell.row) +
             Math.abs(player.col - cell.col);
@@ -421,16 +455,24 @@ export default function LabyrinthPage({ selectedUser }: Props) {
         initializeGame();
     }, [selectedUser]);
 
-    const move = useCallback(
-        (dr: number, dc: number) => {
+    const moveCallback = useCallback(
+        (direction: direction) => {
             if (!labyrinth) return;
+            player.lastTryMoveDirection = direction;
+            let dr = 0;
+            let dc = 0;
+            if (direction === "top") dr = -1;
+            if (direction === "right") dc = 1;
+            if (direction === "bottom") dr = 1;
+            if (direction === "left") dc = -1;
+
             if (!labyrinth.canMove(player, dr, dc)) return;
 
             const nr = player.row + dr;
             const nc = player.col + dc;
             const target = labyrinth.getCell(nr, nc);
 
-            const newPlayer = new Player(nr, nc);
+            const newPlayer = new Player(nr, nc, direction, player.numCarveActions);
             setPlayer(newPlayer);
 
             if (target.type === "special" 
@@ -441,6 +483,8 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                 addPhotoToUser(selectedUser.id, target.photo.id).catch((err: any) =>
                     console.error("Error collecting photo:", err)
                 );
+                target.photo = null; // prevent recollection
+                target.type = "normal"; // prevent retriggering
             }
         },
         [player, labyrinth, selectedUser]
@@ -449,14 +493,39 @@ export default function LabyrinthPage({ selectedUser }: Props) {
     // Handle keyboard input for movement
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "ArrowUp" || e.key === "w") move(-1, 0);
-            if (e.key === "ArrowDown" || e.key === "s") move(1, 0);
-            if (e.key === "ArrowLeft" || e.key === "a") move(0, -1);
-            if (e.key === "ArrowRight" || e.key === "d") move(0, 1);
+            if (e.key === "ArrowUp" || e.key === "w") moveCallback("top");
+            if (e.key === "ArrowDown" || e.key === "s") moveCallback("bottom");
+            if (e.key === "ArrowLeft" || e.key === "a") moveCallback("left");
+            if (e.key === "ArrowRight" || e.key === "d") moveCallback("right");
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
-    }, [move]);
+    }, [moveCallback]);
+
+    // Handle carve wall action
+    const carveWallCallback = useCallback(
+        (direction: direction) => {
+            if (!labyrinth) return;
+            if(player.numCarveActions <= 0) return; // no actions left
+            player.carveWall(direction, labyrinth);
+            setLabyrinth(new Labyrinth(labyrinth.num_rows, labyrinth.num_cols, labyrinth.grid, labyrinth.specialCells)); // trigger re-render
+
+        },
+        [player, labyrinth]
+    );
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "c") {
+                // Carve wall in the direction of last move
+                if (player.lastTryMoveDirection) {
+                    carveWallCallback(player.lastTryMoveDirection);
+                }
+            }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [carveWallCallback, player]);
 
     if (loading) {
         return <div className="flex-1 h-full flex items-center justify-center">Caricamento labirinto...</div>;
@@ -494,13 +563,6 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                         return (
                             <div
                                 key={`${cell.row}-${cell.col}`}
-                                onClick={() => {
-                                    if (cell.isNeighborOf(player))
-                                        move(
-                                            cell.row - player.row,
-                                            cell.col - player.col
-                                        );
-                                }}
                                 className="relative cursor-pointer"
                                 style={{
                                     width: 32,
@@ -515,20 +577,20 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                                 }}
                             >
                                 {visible && cell.type === "exit" && (
-                                    <span className="absolute inset-0 flex items-center justify-center">
-                                        ❤️
+                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-bounce">
+                                        {ICONS.heartCellIcon}
                                     </span>
                                 )}
                                 {visible && player.isAt(cell) && (
-                                    <span className="absolute inset-0 flex items-center justify-center">
-                                        👩
+                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
+                                        {ICONS.playerIcon}
                                     </span>
                                 )}
                                 {visible &&
                                     cell.type === "special" &&
                                     !player.isAt(cell) && (
-                                        <span className="absolute inset-0 flex items-center justify-center">
-                                            ✨
+                                        <span className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">
+                                            {ICONS.specialCellIcon}
                                         </span>
                                     )}
                             </div>
@@ -540,7 +602,7 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             {overlayImg && (
                     <GlassCard className="fixed inset-0 bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div className="flex items-center justify-center animate-pulse">
-                                <span className="text-4xl">✨</span>
+                                <span className="text-4xl">{ICONS.specialCellIcon}</span>
                             </div>
                             <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
                                 Foto Raccolta!
