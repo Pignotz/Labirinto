@@ -47,15 +47,14 @@ export default function AppLayout() {
     }
 
     return (
-        <div className="flex flex-col h-auto background overflow-hidden">
+        <div className="flex flex-col background">
             <Navbar onHelpToggle={attemptToggleHelp} />
             {showHelp && (
                         <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
                     )}
-            <div className="grid grid-cols-[200px_1fr_200px] w-full h-100vh">
+            <div className="grid grid-cols-[200px_1fr_200px] flex-1">
                 <LeftSideBar activeKey={activeKey} setActiveKey={attemptSetActiveKey} />
-
-                <GlassCard  className="flex-1 p-4 overflow-auto">
+                <GlassCard  className="flex-1 items-center justify-center">
                     {activeKey === "play" && <LabyrinthPage selectedUser={selectedUser} />}
                     {activeKey === "collectibles" && (
                         <div className="h-full">
@@ -65,7 +64,6 @@ export default function AppLayout() {
                             </p>
                         </div>
                     )}
-
                     {activeKey === "achievements" && (
                         <>
                             <h2 className="text-xl font-bold mb-2">Achievements</h2>

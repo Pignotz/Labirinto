@@ -9,9 +9,11 @@ import MyButton from "../components/MyButton";
 // ==============================
 // CONFIG
 // ==============================
-const ROWS = 19;
-const COLS = 19;
-const SPECIAL_CELL_PROBABILITY = 0.05;
+const ROWS = 10;
+const COLS = 10;
+const SPECIAL_CELL_PROBABILITY = 0.1;
+const PHOTO_CELL_PROBABILITY = 0.7;
+const FEAR_GHOST_PROBABILITY = 0.3;
 const VISION_RADIUS = 4;
 
 // ==============================
@@ -28,14 +30,14 @@ const COLORS = {
     },
 };
 
-type cellType = "normal" | "special" | "exit";
+type cellType = "normal" | "photo" | "exit" | "fearGhost";
 type direction = "top" | "right" | "bottom" | "left";
 
 const ICONS = {
     playerIcon: "👩",
     heartCellIcon: "❤️",
-    //Icona di una fotografia
-    specialCellIcon: "✨",
+    photoCellIcon: "✨",
+    fearGhostIcon: "👻",
 };
 
 class Positioned {
@@ -53,7 +55,7 @@ class Positioned {
 /**
  * Represents a single cell in the grid-based labyrinth.
  * Each cell tracks its row/column coordinates, whether it's a
- * special cell (e.g. triggers an event), and which of its four
+ * photo cell (e.g. triggers an event), and which of its four
  * walls are present. Walls are booleans named `top|right|bottom|left`.
  */
 class Cell extends Positioned {
@@ -129,7 +131,7 @@ class Cell extends Positioned {
  * visibility, rendering, and allowed moves.
  */
 class Player extends Positioned {
-    
+
     lastTryMoveDirection: direction | null = null;
     numCarveActions: number = 0;
     /**
@@ -154,38 +156,38 @@ class Player extends Positioned {
 
     carveWall(direction: direction, labyrinth: Labyrinth) {
         // This method can be used for player-triggered wall removal if desired
-            const currentCell = labyrinth.getCell(this.row, this.col);
-            if (currentCell.hasWall(direction)) {
-                currentCell.removeWall(direction);
-                this.numCarveActions = Math.max(0, this.numCarveActions - 1);   
-                // Also remove the opposite wall in the adjacent cell
-                let adjacentRow = this.row;
-                let adjacentCol = this.col;
-                let oppositeDirection: direction;
+        const currentCell = labyrinth.getCell(this.row, this.col);
+        if (currentCell.hasWall(direction)) {
+            currentCell.removeWall(direction);
+            this.numCarveActions = Math.max(0, this.numCarveActions - 1);
+            // Also remove the opposite wall in the adjacent cell
+            let adjacentRow = this.row;
+            let adjacentCol = this.col;
+            let oppositeDirection: direction;
 
-                if (direction === "top") {
-                    adjacentRow -= 1;
-                    oppositeDirection = "bottom";
-                } else if (direction === "right") {
-                    adjacentCol += 1;
-                    oppositeDirection = "left";
-                } else if (direction === "bottom") {
-                    adjacentRow += 1;
-                    oppositeDirection = "top";
-                } else {
-                    adjacentCol -= 1;
-                    oppositeDirection = "right";
-                }
-                // Ensure adjacent cell is within bounds before removing opposite wall
-                if (
-                    adjacentRow >= 0 &&
-                    adjacentRow < labyrinth.num_rows &&
-                    adjacentCol >= 0 &&
-                    adjacentCol < labyrinth.num_cols
-                ) {
-                    labyrinth.getCell(adjacentRow, adjacentCol).removeWall(oppositeDirection);
-                }
+            if (direction === "top") {
+                adjacentRow -= 1;
+                oppositeDirection = "bottom";
+            } else if (direction === "right") {
+                adjacentCol += 1;
+                oppositeDirection = "left";
+            } else if (direction === "bottom") {
+                adjacentRow += 1;
+                oppositeDirection = "top";
+            } else {
+                adjacentCol -= 1;
+                oppositeDirection = "right";
             }
+            // Ensure adjacent cell is within bounds before removing opposite wall
+            if (
+                adjacentRow >= 0 &&
+                adjacentRow < labyrinth.num_rows &&
+                adjacentCol >= 0 &&
+                adjacentCol < labyrinth.num_cols
+            ) {
+                labyrinth.getCell(adjacentRow, adjacentCol).removeWall(oppositeDirection);
+            }
+        }
     }
 }
 
@@ -200,16 +202,16 @@ class Labyrinth {
     num_rows: number;
     num_cols: number;
     grid: Cell[][];
-    specialCells: Cell[] = [];
+    photoCells: Cell[] = [];
 
     /**
      * @param {number} rows
      * @param {number} cols
      */
-    constructor(rows: number, cols: number, grid?: Cell[][], specialCells?: Cell[]) {
+    constructor(rows: number, cols: number, grid?: Cell[][], photoCells?: Cell[]) {
         this.num_rows = rows;
         this.num_cols = cols;
-        this.specialCells = specialCells || [];
+        this.photoCells = photoCells || [];
         this.grid = grid || this.generate();
     }
 
@@ -219,9 +221,9 @@ class Labyrinth {
     }
 
     /**
-     * Generate a new maze grid and mark some cells as special.
+     * Generate a new maze grid and mark some cells as photo.
      */
-    generate(): Cell[][] {
+    private generate(): Cell[][] {
         const grid = Array.from({ length: this.num_rows }, (_, r) =>
             Array.from({ length: this.num_cols }, (_, c) => new Cell(r, c))
         );
@@ -260,38 +262,41 @@ class Labyrinth {
 
         carve(0, 0);
 
-        // Mark special cells
+        // Mark photo cells
         const cr = Math.floor(this.num_rows / 2);
         const cc = Math.floor(this.num_cols / 2);
         grid[cr][cc].type = "exit";
-        
+
         for (let r = 0; r < this.num_rows; r++) {
             for (let c = 0; c < this.num_cols; c++) {
                 if (
                     Math.random() < SPECIAL_CELL_PROBABILITY &&
                     !(r === cr && c === cc)
                 ) {
-                    grid[r][c].type = "special";
-                    this.specialCells.push(grid[r][c]);
+                    if (Math.random() < PHOTO_CELL_PROBABILITY) {
+                        grid[r][c].type = "photo";
+                        this.photoCells.push(grid[r][c]);
+                    } else {
+                        grid[r][c].type = "fearGhost";
+                    }
                 }
             }
         }
-
         return grid;
     }
 
     /**
-     * Propagate color from special cells using fair multi-source BFS
-     * Each special cell expands one level at a time in round-robin fashion
+     * Propagate color from photo cells using fair multi-source BFS
+     * Each photo cell expands one level at a time in round-robin fashion
      * Ensures equal opportunity for each photo's color to spread through the maze
      */
     propagateColors() {
         const coloredCells = new Map<string, { color: string; alpha: number }>();
-        
-        // Initialize: color special cells themselves with full opacity
-        for (const specialCell of this.specialCells) {
+
+        // Initialize: color photo cells themselves with full opacity
+        for (const specialCell of this.photoCells) {
             if (!specialCell.photo?.representativeColor) continue;
-            
+
             const cellKey = `${specialCell.row}-${specialCell.col}`;
             specialCell.setBackgroundColorFromHex(specialCell.photo.representativeColor, 1);
             coloredCells.set(cellKey, {
@@ -300,8 +305,8 @@ class Labyrinth {
             });
         }
 
-        // Multi-source BFS: each special cell gets one iteration per distance level
-        const frontiers = this.specialCells.map(cell => ({
+        // Multi-source BFS: each photo cell gets one iteration per distance level
+        const frontiers = this.photoCells.map(cell => ({
             cell,
             nextCells: [cell],
             distance: 0
@@ -313,7 +318,7 @@ class Labyrinth {
         while (hasExpanded && frontiers[0].distance < maxDistance) {
             hasExpanded = false;
 
-            // Round-robin through each special cell's frontier
+            // Round-robin through each photo cell's frontier
             for (const frontier of frontiers) {
                 const nextFrontier: Cell[] = [];
 
@@ -427,16 +432,17 @@ export default function LabyrinthPage({ selectedUser }: Props) {
     const [overlayImg, setOverlayImg] = useState<Photo | null>(null);
     const [fullVision] = useState(true);
     const [loading, setLoading] = useState(true);
+    const [fightFearGhost, setFightFearGhost] = useState(false);
 
-    // Initialize labyrinth and load photos for special cells
+    // Initialize labyrinth and load photos for photo cells
     useEffect(() => {
         const initializeGame = async () => {
             const newLabyrinth = new Labyrinth(ROWS, COLS);
-            
+
             if (selectedUser) {
-                // Load random uncollected photos for each special cell
+                // Load random uncollected photos for each photo cell
                 const excludedPhotoIds: number[] = [];
-                for (const specialCell of newLabyrinth.specialCells) {
+                for (const specialCell of newLabyrinth.photoCells) {
                     const photo = await getRandomUncollectedPhoto(selectedUser.id, excludedPhotoIds);
                     if (photo) {
                         specialCell.photo = photo;
@@ -466,6 +472,37 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             if (direction === "bottom") dr = 1;
             if (direction === "left") dc = -1;
 
+            // Check if fear ghost cell is adjacent and not separated by a wall
+            const currentCell = labyrinth.getCell(player.row, player.col);
+            let fearGhostNearby = false;
+            for (const [ndr, ndc, wallDir] of [
+                [-1, 0, "top"],
+                [1, 0, "bottom"],
+                [0, -1, "left"],
+                [0, 1, "right"],
+            ] as [number, number, direction][]) {
+                const nr = player.row + ndr;
+                const nc = player.col + ndc;
+                if (
+                    nr >= 0 &&
+                    nc >= 0 &&
+                    nr < labyrinth.num_rows &&
+                    nc < labyrinth.num_cols &&
+                    !currentCell.hasWall(wallDir)
+                ) {
+                    const neighborCell = labyrinth.getCell(nr, nc);
+                    if (neighborCell.type === "fearGhost") {
+                        fearGhostNearby = true;
+                        break;
+                    }
+                }
+            }
+            if (fearGhostNearby) {
+                setFightFearGhost(true);
+                return;
+            }
+
+
             if (!labyrinth.canMove(player, dr, dc)) return;
 
             const nr = player.row + dr;
@@ -475,8 +512,8 @@ export default function LabyrinthPage({ selectedUser }: Props) {
             const newPlayer = new Player(nr, nc, direction, player.numCarveActions);
             setPlayer(newPlayer);
 
-            if (target.type === "special" 
-                && target.photo 
+            if (target.type === "photo"
+                && target.photo
                 && selectedUser) {
                 setOverlayImg(target.photo);
                 // Mark photo as collected
@@ -506,9 +543,9 @@ export default function LabyrinthPage({ selectedUser }: Props) {
     const carveWallCallback = useCallback(
         (direction: direction) => {
             if (!labyrinth) return;
-            if(player.numCarveActions <= 0) return; // no actions left
+            if (player.numCarveActions <= 0) return; // no actions left
             player.carveWall(direction, labyrinth);
-            setLabyrinth(new Labyrinth(labyrinth.num_rows, labyrinth.num_cols, labyrinth.grid, labyrinth.specialCells)); // trigger re-render
+            setLabyrinth(new Labyrinth(labyrinth.num_rows, labyrinth.num_cols, labyrinth.grid, labyrinth.photoCells)); // trigger re-render
 
         },
         [player, labyrinth]
@@ -546,92 +583,113 @@ export default function LabyrinthPage({ selectedUser }: Props) {
 
     return (
         <>
-            <div className="flex-1 h-full flex flex-col">
-                <div className="flex justify-center pt-4 flex-1 overflow-auto"
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: `repeat(${COLS}, 32px)`,
-                        lineHeight: 0,
-                        width: "fit-content",
-                        margin: "0 auto",
-                    }}
-                >
-                    {labyrinth.grid.flat().map((cell: Cell) => {
-                        const visible = fullVision
-                            ? true
-                            : labyrinth.isVisible(player, cell);
-                        return (
-                            <div
-                                key={`${cell.row}-${cell.col}`}
-                                className="relative cursor-pointer"
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    background: visible
-                                        ? cell.backgroundColor
-                                        : COLORS.cell.hidden,
-                                    borderTop: wall(cell.walls.top),
-                                    borderRight: wall(cell.walls.right),
-                                    borderBottom: wall(cell.walls.bottom),
-                                    borderLeft: wall(cell.walls.left),
-                                }}
-                            >
-                                {visible && cell.type === "exit" && (
-                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-bounce">
-                                        {ICONS.heartCellIcon}
-                                    </span>
-                                )}
-                                {visible && player.isAt(cell) && (
-                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
-                                        {ICONS.playerIcon}
-                                    </span>
-                                )}
-                                {visible &&
-                                    cell.type === "special" &&
-                                    !player.isAt(cell) && (
-                                        <span className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">
-                                            {ICONS.specialCellIcon}
-                                        </span>
-                                    )}
-                            </div>
-                        );
-                    })}
+            <div className="flex items-center justify-between w-full px-2 py-1 mb-2 rounded-lg bg-black/40 text-white text-sm">
+                <div className="font-semibold truncate">
+                    🧭 {selectedUser.username}
+                </div>
+                <div className="flex items-center gap-1">
+                    ⛏️
+                    <span className="font-mono">
+                        {player.numCarveActions}
+                    </span>
                 </div>
             </div>
 
+            <div
+                className="flex pt-4 flex-1 overflow-auto leading-none"
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${COLS}, 32px)`,
+                    gridAutoRows: "32px",
+                    gap: 0,
+                    lineHeight: 0,
+                    width: "fit-content",
+                    margin: "0 auto",
+                }}
+            >
+
+                {/* Render each cell in the labyrinth grid */}
+                {labyrinth.grid.flat().map((cell: Cell) => {
+                    const visible = fullVision
+                        ? true
+                        : labyrinth.isVisible(player, cell);
+                    return (
+                        <div
+                            key={`${cell.row}-${cell.col}`}
+                            className="relative cursor-pointer leading-none"
+                            style={{
+                                width: 32,
+                                height: 32,
+                                background: visible
+                                    ? cell.backgroundColor
+                                    : COLORS.cell.hidden,
+                                borderTop: wall(cell.walls.top),
+                                borderRight: wall(cell.walls.right),
+                                borderBottom: wall(cell.walls.bottom),
+                                borderLeft: wall(cell.walls.left),
+                            }}
+                        >
+                            {visible && cell.type === "exit" && (
+                                <span className="absolute inset-0 flex items-center justify-center text-2xl animate-bounce">
+                                    {ICONS.heartCellIcon}
+                                </span>
+                            )}
+                            {visible && player.isAt(cell) && (
+                                <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
+                                    {ICONS.playerIcon}
+                                </span>
+                            )}
+                            {visible &&
+                                cell.type === "photo" &&
+                                !player.isAt(cell) && (
+                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">
+                                        {ICONS.photoCellIcon}
+                                    </span>
+                                )}
+                            {visible &&
+                                cell.type === "fearGhost" &&
+                                !player.isAt(cell) && (
+                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
+                                        {ICONS.fearGhostIcon}
+                                    </span>
+                                )}
+                        </div>
+                    );
+                })}
+            </div>
             {overlayImg && (
-                    <GlassCard className="fixed inset-0 bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className="flex items-center justify-center animate-pulse">
-                                <span className="text-4xl">{ICONS.specialCellIcon}</span>
-                            </div>
-                            <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
-                                Foto Raccolta!
-                            </h2>
-                            <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
-                                <img
-                                    src={`/api/photo/${overlayImg.id}/image`}
-                                    alt="Foto raccolta"
-                                    className="w-full h-auto object-cover max-h-96"
-                                />
-                                <div 
-                                    className="absolute inset-0 pointer-events-none rounded-lg"
-                                    style={{
-                                        boxShadow: `inset 0 0 40px ${overlayImg.representativeColor || "rgba(255,255,255,0.2)"}`,
-                                    }}
-                                />
-                            </div>
-                            <p className="text-center text-sm text-gray-300">
-                                Scopri i segreti del labirinto, una foto alla volta...
-                            </p>
-                        <CardFooter className="flex gap-2 justify-center">
-                            <MyButton
-                                className="bg-linear-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
-                                onPress={() => setOverlayImg(null)}
-                            >
-                                Continua l'Avventura
-                            </MyButton>
-                        </CardFooter>
-                    </GlassCard>
+                <GlassCard className="fixed inset-0 bg-opacity-100 bg-white flex items-center justify-center z-50">
+                    <div className="flex items-center justify-center animate-pulse">
+                        <span className="text-4xl">{ICONS.photoCellIcon}</span>
+                    </div>
+                    <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
+                        Foto Raccolta!
+                    </h2>
+                    <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
+                        <img
+                            src={`/api/photo/${overlayImg.id}/image`}
+                            alt="Foto raccolta"
+                            className="w-full h-auto object-cover max-h-96"
+                        />
+                        <div
+                            className="absolute inset-0 pointer-events-none rounded-lg"
+                            style={{
+                                boxShadow: `inset 0 0 40px ${overlayImg.representativeColor || "rgba(255,255,255,0.2)"}`,
+                            }}
+                        />
+                    </div>
+                    <p className="text-center text-sm text-gray-300">
+                        Scopri i segreti del labirinto, una foto alla volta...
+                    </p>
+                    <CardFooter className="flex gap-2 justify-center">
+                        <MyButton
+                            className="bg-linear-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
+                            onPress={() => setOverlayImg(null)}
+                        >
+                            Continua l'Avventura
+                        </MyButton>
+                    </CardFooter>
+                </GlassCard>
             )}
         </>
     );
