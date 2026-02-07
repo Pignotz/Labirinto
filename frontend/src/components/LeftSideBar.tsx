@@ -3,11 +3,12 @@ import { Card, Listbox, ListboxItem } from "@heroui/react";
 import GlassCard from "./GlassCard";
 
 type Props = {
+  className?: string;
   activeKey: string;
   setActiveKey: (key: string) => void;
 };
 
-export default function LeftSideBar({ activeKey, setActiveKey }: Props) {
+export default function LeftSideBar({className, activeKey, setActiveKey }: Props) {
   const sidebarItems = [
     { key: "play", label: "🎮 Gioca" },
     { key: "collectibles", label: "✨ Collezionabili" },
@@ -15,7 +16,7 @@ export default function LeftSideBar({ activeKey, setActiveKey }: Props) {
   ];
 
   return (
-    <GlassCard className="flex flex-col p-3 gap-4">
+    <GlassCard className={`flex flex-col p-3 gap-4 ${className}`}>
       <Listbox
         disallowEmptySelection
         selectionMode="single"

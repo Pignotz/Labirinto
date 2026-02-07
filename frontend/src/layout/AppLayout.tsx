@@ -50,11 +50,11 @@ export default function AppLayout() {
         <div className="flex flex-col background">
             <Navbar onHelpToggle={attemptToggleHelp} />
             {showHelp && (
-                        <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
-                    )}
-            <div className="grid grid-cols-[200px_1fr_200px] flex-1">
-                <LeftSideBar activeKey={activeKey} setActiveKey={attemptSetActiveKey} />
-                <GlassCard  className="flex-1 items-center justify-center">
+                <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />
+            )}
+            <div className="grid grid-cols-[auto_1fr] flex-1">
+                <LeftSideBar activeKey={activeKey} setActiveKey={attemptSetActiveKey} className="w-48" />
+                <GlassCard className="">
                     {activeKey === "play" && <LabyrinthPage selectedUser={selectedUser} />}
                     {activeKey === "collectibles" && (
                         <div className="h-full">
@@ -75,7 +75,6 @@ export default function AppLayout() {
                         </>
                     )}
                 </GlassCard>
-                <RightSideBar selectedUser={selectedUser} />
             </div>
             <PendingNav
                 pendingNav={pendingNav}

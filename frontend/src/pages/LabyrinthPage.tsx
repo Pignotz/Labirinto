@@ -6,6 +6,7 @@ import { addPhotoToUser } from "../api/userPhotoApi";
 import { getRandomUncollectedPhoto } from "../api/photoApi";
 import GlassCard from "../components/GlassCard";
 import MyButton from "../components/MyButton";
+import RightSideBar from "../components/RightSideBar";
 // ==============================
 // CONFIG
 // ==============================
@@ -583,79 +584,85 @@ export default function LabyrinthPage({ selectedUser }: Props) {
 
     return (
         <>
-            <div className="flex items-center justify-between w-full px-2 py-1 mb-2 rounded-lg bg-black/40 text-white text-sm">
-                <div className="font-semibold truncate">
-                    🧭 {selectedUser.username}
-                </div>
-                <div className="flex items-center gap-1">
-                    ⛏️
-                    <span className="font-mono">
-                        {player.numCarveActions}
-                    </span>
-                </div>
-            </div>
-
-            <div
-                className="flex pt-4 flex-1 overflow-auto leading-none"
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: `repeat(${COLS}, 32px)`,
-                    gridAutoRows: "32px",
-                    gap: 0,
-                    lineHeight: 0,
-                    width: "fit-content",
-                    margin: "0 auto",
-                }}
-            >
-
-                {/* Render each cell in the labyrinth grid */}
-                {labyrinth.grid.flat().map((cell: Cell) => {
-                    const visible = fullVision
-                        ? true
-                        : labyrinth.isVisible(player, cell);
-                    return (
-                        <div
-                            key={`${cell.row}-${cell.col}`}
-                            className="relative cursor-pointer leading-none"
-                            style={{
-                                width: 32,
-                                height: 32,
-                                background: visible
-                                    ? cell.backgroundColor
-                                    : COLORS.cell.hidden,
-                                borderTop: wall(cell.walls.top),
-                                borderRight: wall(cell.walls.right),
-                                borderBottom: wall(cell.walls.bottom),
-                                borderLeft: wall(cell.walls.left),
-                            }}
-                        >
-                            {visible && cell.type === "exit" && (
-                                <span className="absolute inset-0 flex items-center justify-center text-2xl animate-bounce">
-                                    {ICONS.heartCellIcon}
-                                </span>
-                            )}
-                            {visible && player.isAt(cell) && (
-                                <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
-                                    {ICONS.playerIcon}
-                                </span>
-                            )}
-                            {visible &&
-                                cell.type === "photo" &&
-                                !player.isAt(cell) && (
-                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">
-                                        {ICONS.photoCellIcon}
-                                    </span>
-                                )}
-                            {visible &&
-                                cell.type === "fearGhost" &&
-                                !player.isAt(cell) && (
-                                    <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
-                                        {ICONS.fearGhostIcon}
-                                    </span>
-                                )}
+            <div className="flex flex-row">
+                <div className="flex flex-col flex-1">
+                    {/* Player info*/}
+                    <div className="flex flex-row rounded-lg bg-black/40 text-white text-sm">
+                        <div className="font-semibold">
+                            🧭 {selectedUser.username}
                         </div>
-                    );
-                })}
+                        <div className="flex justify-end gap-1 ml-auto">
+                            ⛏️
+                            <span className="font-mono">
+                                {player.numCarveActions}
+                            </span>
+                        </div>
+                    </div>
+                    {/* Labyrinth grid */}
+                    <div
+                        className="flex pt-4 overflow-auto leading-none"
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: `repeat(${COLS}, 32px)`,
+                            gridAutoRows: "32px",
+                            gap: 0,
+                            lineHeight: 0,
+                            width: "fit-content",
+                            margin: "0 auto",
+                        }}
+                    >
+
+                        {/* Render each cell in the labyrinth grid */}
+                        {labyrinth.grid.flat().map((cell: Cell) => {
+                            const visible = fullVision
+                                ? true
+                                : labyrinth.isVisible(player, cell);
+                            return (
+                                <div
+                                    key={`${cell.row}-${cell.col}`}
+                                    className="relative cursor-pointer leading-none"
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        background: visible
+                                            ? cell.backgroundColor
+                                            : COLORS.cell.hidden,
+                                        borderTop: wall(cell.walls.top),
+                                        borderRight: wall(cell.walls.right),
+                                        borderBottom: wall(cell.walls.bottom),
+                                        borderLeft: wall(cell.walls.left),
+                                    }}
+                                >
+                                    {visible && cell.type === "exit" && (
+                                        <span className="absolute inset-0 flex items-center justify-center text-2xl animate-bounce">
+                                            {ICONS.heartCellIcon}
+                                        </span>
+                                    )}
+                                    {visible && player.isAt(cell) && (
+                                        <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
+                                            {ICONS.playerIcon}
+                                        </span>
+                                    )}
+                                    {visible &&
+                                        cell.type === "photo" &&
+                                        !player.isAt(cell) && (
+                                            <span className="absolute inset-0 flex items-center justify-center text-2xl animate-pulse">
+                                                {ICONS.photoCellIcon}
+                                            </span>
+                                        )}
+                                    {visible &&
+                                        cell.type === "fearGhost" &&
+                                        !player.isAt(cell) && (
+                                            <span className="absolute inset-0 flex items-center justify-center text-2xl animate-none">
+                                                {ICONS.fearGhostIcon}
+                                            </span>
+                                        )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+                <RightSideBar selectedUser={selectedUser} className="w-48 shrink-0" />
             </div>
             {overlayImg && (
                 <GlassCard className="fixed inset-0 bg-opacity-100 bg-white flex items-center justify-center z-50">
