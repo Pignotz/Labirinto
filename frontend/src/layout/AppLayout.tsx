@@ -47,7 +47,7 @@ export default function AppLayout() {
     }
 
     return (
-        <div className="flex flex-col background">
+        <div className="flex flex-1 flex-col background overflow-auto z-0">
             <Navbar onHelpToggle={attemptToggleHelp} />
             {showHelp && (
                 <HelpModal open={showHelp} onClose={() => setShowHelp(false)} />

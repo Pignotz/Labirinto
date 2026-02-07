@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { Card, CardBody, CardFooter, Button } from "@heroui/react";
+import { Card, CardBody, CardFooter, Button, Modal } from "@heroui/react";
 import { User } from "../models/User";
 import { Photo } from "../models/Photo";
 import { addPhotoToUser } from "../api/userPhotoApi";
@@ -7,6 +7,12 @@ import { getRandomUncollectedPhoto } from "../api/photoApi";
 import GlassCard from "../components/GlassCard";
 import MyButton from "../components/MyButton";
 import RightSideBar from "../components/RightSideBar";
+import {
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+} from "@heroui/react";
 // ==============================
 // CONFIG
 // ==============================
@@ -435,6 +441,8 @@ export default function LabyrinthPage({ selectedUser }: Props) {
     const [loading, setLoading] = useState(true);
     const [fightFearGhost, setFightFearGhost] = useState(false);
 
+
+
     // Initialize labyrinth and load photos for photo cells
     useEffect(() => {
         const initializeGame = async () => {
@@ -531,10 +539,10 @@ export default function LabyrinthPage({ selectedUser }: Props) {
     // Handle keyboard input for movement
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "ArrowUp" || e.key === "w") moveCallback("top");
-            if (e.key === "ArrowDown" || e.key === "s") moveCallback("bottom");
-            if (e.key === "ArrowLeft" || e.key === "a") moveCallback("left");
-            if (e.key === "ArrowRight" || e.key === "d") moveCallback("right");
+            if (e.key === "w") moveCallback("top");
+            if (e.key === "s") moveCallback("bottom");
+            if (e.key === "a") moveCallback("left");
+            if (e.key === "d") moveCallback("right");
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
@@ -664,40 +672,62 @@ export default function LabyrinthPage({ selectedUser }: Props) {
                 </div>
                 <RightSideBar selectedUser={selectedUser} className="w-48 shrink-0" />
             </div>
-            {overlayImg && (
-                <GlassCard className="fixed inset-0 bg-opacity-100 bg-white flex items-center justify-center z-50">
-                    <div className="flex items-center justify-center animate-pulse">
-                        <span className="text-4xl">{ICONS.photoCellIcon}</span>
-                    </div>
-                    <h2 className="text-center text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
-                        Foto Raccolta!
-                    </h2>
-                    <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
-                        <img
-                            src={`/api/photo/${overlayImg.id}/image`}
-                            alt="Foto raccolta"
-                            className="w-full h-auto object-cover max-h-96"
-                        />
-                        <div
-                            className="absolute inset-0 pointer-events-none rounded-lg"
-                            style={{
-                                boxShadow: `inset 0 0 40px ${overlayImg.representativeColor || "rgba(255,255,255,0.2)"}`,
-                            }}
-                        />
-                    </div>
-                    <p className="text-center text-sm text-gray-300">
-                        Scopri i segreti del labirinto, una foto alla volta...
-                    </p>
-                    <CardFooter className="flex gap-2 justify-center">
-                        <MyButton
-                            className="bg-linear-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
-                            onPress={() => setOverlayImg(null)}
-                        >
-                            Continua l'Avventura
-                        </MyButton>
-                    </CardFooter>
-                </GlassCard>
-            )}
+            <Modal
+                isOpen={overlayImg !== null}
+                onOpenChange={(open) => {
+                    if (!open) setOverlayImg(null);
+                }}
+                
+                backdrop="blur"
+                placement="center"
+                portalContainer={document.body}
+                className="relative z-50"
+            >
+                <ModalContent className="outline-none ring-0 bg-black/80 rounded-2xl">
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col items-center gap-2">
+                                <span className="text-4xl animate-pulse">
+                                    {ICONS.photoCellIcon}
+                                </span>
+                                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-orange-400">
+                                    Foto Raccolta!
+                                </h2>
+                            </ModalHeader>
+                            <ModalBody className="flex flex-col items-center gap-4">
+                                {overlayImg && (
+                                    <div className="relative rounded-lg overflow-hidden shadow-lg border-2 border-yellow-500/50">
+                                        <img
+                                            src={`/api/photo/${overlayImg.id}/image`}
+                                            alt="Foto raccolta"
+                                            className="w-full h-auto object-cover max-h-96"
+                                        />
+                                        <div
+                                            className="absolute inset-0 pointer-events-none rounded-lg"
+                                            style={{
+                                                boxShadow: `inset 0 0 40px ${overlayImg.representativeColor ||
+                                                    "rgba(255,255,255,0.2)"
+                                                    }`,
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                                <p className="text-center text-sm text-gray-300">
+                                    Scopri i segreti del labirinto, una foto alla volta...
+                                </p>
+                            </ModalBody>
+                            <ModalFooter className="flex justify-center">
+                                <MyButton
+                                    className="bg-linear-to-r from-yellow-500 to-orange-500 text-white font-semibold px-8"
+                                    onPress={onClose}
+                                >
+                                    Continua l'Avventura
+                                </MyButton>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
         </>
     );
 }
